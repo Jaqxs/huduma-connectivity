@@ -12,6 +12,7 @@ import ProfessionalDetail from "./pages/ProfessionalDetail";
 import Appointments from "./pages/Appointments";
 import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
+import Monetization from "./pages/Monetization";
 import NotFound from "./pages/NotFound";
 import { UserProvider } from "./context/UserContext";
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/premium" element={<Monetization />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, MapPin, Star } from 'lucide-react';
+import { Clock, MapPin, Star, BadgeDollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import PremiumBadge from './PremiumBadge';
 
 interface ServiceCardProps {
   id: string;
@@ -15,6 +16,7 @@ interface ServiceCardProps {
   currency?: string;
   location: string;
   estimatedTime?: string;
+  isPremium?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -30,6 +32,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   currency = 'TZS',
   location,
   estimatedTime,
+  isPremium = false,
   className,
   style
 }) => {
@@ -39,6 +42,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
       className={cn(
         "group flex flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300",
         "border border-border hover:shadow-md hover:-translate-y-1",
+        isPremium && "border-huduma-green/40",
         className
       )}
       style={style}
@@ -49,11 +53,19 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
           <span className="inline-block py-1 px-3 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium">
             {category}
           </span>
+          
+          {isPremium && (
+            <PremiumBadge level="premium" size="sm" />
+          )}
         </div>
+        
+        {isPremium && (
+          <div className="absolute inset-0 border-4 border-huduma-green/20 rounded-2xl pointer-events-none" />
+        )}
       </div>
       
       <div className="flex flex-col p-4 flex-grow">
@@ -80,7 +92,12 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         
         <div className="mt-4 pt-3 border-t flex items-center justify-between">
           <span className="font-semibold">{new Intl.NumberFormat('en-US').format(price)} {currency}</span>
-          <button className="bg-huduma-light-green hover:bg-huduma-green hover:text-white text-huduma-green py-1.5 px-3 rounded-lg text-sm font-medium transition-colors duration-300">
+          <button className={cn(
+            "py-1.5 px-3 rounded-lg text-sm font-medium transition-colors duration-300",
+            isPremium 
+              ? "bg-huduma-green text-white hover:bg-huduma-green/90" 
+              : "bg-huduma-light-green hover:bg-huduma-green hover:text-white text-huduma-green"
+          )}>
             View Details
           </button>
         </div>
