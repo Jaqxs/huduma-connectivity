@@ -16,6 +16,7 @@ interface ServiceCardProps {
   location: string;
   estimatedTime?: string;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -29,7 +30,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   currency = 'TZS',
   location,
   estimatedTime,
-  className
+  className,
+  style
 }) => {
   return (
     <Link 
@@ -39,6 +41,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         "border border-border hover:shadow-md hover:-translate-y-1",
         className
       )}
+      style={style}
     >
       <div className="relative w-full aspect-[4/3] overflow-hidden">
         <img 

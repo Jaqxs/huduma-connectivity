@@ -15,6 +15,7 @@ interface ProfessionalCardProps {
   verified?: boolean;
   available?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const ProfessionalCard: React.FC<ProfessionalCardProps> = ({
@@ -27,7 +28,8 @@ const ProfessionalCard: React.FC<ProfessionalCardProps> = ({
   location,
   verified = false,
   available = true,
-  className
+  className,
+  style
 }) => {
   return (
     <Link 
@@ -37,6 +39,7 @@ const ProfessionalCard: React.FC<ProfessionalCardProps> = ({
         "border border-border hover:shadow-md hover:-translate-y-1",
         className
       )}
+      style={style}
     >
       <div className="p-4 flex items-center gap-4">
         <div className="relative flex-shrink-0">

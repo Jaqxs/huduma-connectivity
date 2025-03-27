@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import { User, MapPin, Phone, Mail, Calendar, Star, Edit, LogOut, Settings, Shield, Award, BookOpen, Languages, Upload, Save } from 'lucide-react';
+import { User, MapPin, Phone, Mail, Calendar, Star, Edit, LogOut, Settings, Shield, Award, BookOpen, Languages, Upload, Save, Plus } from 'lucide-react';
 import { useUserContext } from '@/context/UserContext';
 
 const Profile: React.FC = () => {
