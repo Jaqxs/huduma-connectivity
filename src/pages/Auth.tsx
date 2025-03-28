@@ -20,11 +20,12 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { GradientButton } from '@/components/ui/gradient-button';
 import { useToast } from '@/components/ui/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
 
 const authFormSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -88,95 +89,152 @@ const Auth: React.FC = () => {
   };
   
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-huduma-neutral/50">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex justify-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-huduma-green flex items-center justify-center">
-              <span className="text-white font-bold text-xl">H</span>
-            </div>
-          </div>
-          <CardTitle className="text-2xl text-center">
-            {isSignUp ? 'Create an Account' : 'Welcome Back'}
-          </CardTitle>
-          <CardDescription className="text-center">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-huduma-light-teal via-white to-huduma-light-green">
+      <div className="w-full max-w-md">
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold text-huduma-dark-neutral mb-1 font-serif">
+            {isSignUp ? 'Join Huduma' : 'Welcome Back'}
+          </h1>
+          <p className="text-muted-foreground">
             {isSignUp 
-              ? 'Sign up to access Huduma services' 
-              : 'Sign in to your Huduma account'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {isSignUp && (
+              ? 'Create an account to access premium services' 
+              : 'Sign in to continue your Huduma experience'}
+          </p>
+        </div>
+
+        <Card className="w-full backdrop-blur-sm bg-white/90 border-0 shadow-hover animate-fade-in">
+          <CardHeader className="pb-4">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-huduma-green to-huduma-teal flex items-center justify-center shadow-glow animate-bounce-subtle">
+                <span className="text-white font-bold text-2xl">H</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="px-6 pt-0">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                {isSignUp && (
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-huduma-dark-neutral">Full Name</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input 
+                              placeholder="John Doe" 
+                              {...field} 
+                              className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50" 
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                
                 <FormField
                   control={form.control}
-                  name="fullName"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel className="text-sm font-medium text-huduma-dark-neutral">Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input 
+                            type="email" 
+                            placeholder="you@example.com" 
+                            {...field} 
+                            className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50" 
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="you@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button type="submit" className="w-full bg-huduma-green hover:bg-huduma-green/90" disabled={isLoading}>
-                {isLoading ? (
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-huduma-dark-neutral">Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input 
+                            type="password" 
+                            placeholder="••••••••" 
+                            {...field} 
+                            className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50" 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <GradientButton
+                  type="submit"
+                  className="w-full mt-6 py-6"
+                  disabled={isLoading}
+                  glow="true"
+                  size="lg"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                    </>
+                  ) : (
+                    <>
+                      {isSignUp ? 'Create Account' : 'Sign In'}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </GradientButton>
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex flex-col px-6 pt-0 pb-6">
+            <div className="w-full border-t border-huduma-neutral/10 my-4"></div>
+            <div className="text-sm text-center">
+              <span className="text-muted-foreground">
+                {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+              </span>{' '}
+              <button
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-huduma-green hover:underline font-medium inline-flex items-center"
+                type="button"
+              >
+                {isSignUp ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                    <ArrowLeft className="mr-1 h-3 w-3" />
+                    Sign In Instead
                   </>
                 ) : (
-                  <>{isSignUp ? 'Sign Up' : 'Sign In'}</>
+                  <>
+                    Create Account
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </>
                 )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex flex-col">
-          <div className="text-sm text-center mt-2">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-            <button
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-huduma-green hover:underline font-medium"
-            >
-              {isSignUp ? 'Sign In' : 'Sign Up'}
-            </button>
-          </div>
-        </CardFooter>
-      </Card>
+              </button>
+            </div>
+          </CardFooter>
+        </Card>
+
+        <div className="mt-8 text-center">
+          <p className="text-xs text-muted-foreground">
+            By continuing, you agree to Huduma's <a href="#" className="text-huduma-green hover:underline">Terms of Service</a> and <a href="#" className="text-huduma-green hover:underline">Privacy Policy</a>.
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
