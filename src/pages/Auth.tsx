@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -52,7 +51,6 @@ const Auth: React.FC = () => {
   });
   
   useEffect(() => {
-    // Redirect if already logged in
     if (user) {
       navigate('/');
     }
@@ -184,7 +182,7 @@ const Auth: React.FC = () => {
                   type="submit"
                   className="w-full mt-6 py-6"
                   disabled={isLoading}
-                  glow="true"
+                  glow={true}
                   size="lg"
                 >
                   {isLoading ? (
