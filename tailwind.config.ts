@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -63,7 +62,15 @@ export default {
 					yellow: '#FFD700',
 					'light-yellow': '#FFF8DC',
 					neutral: '#F7F7F7',
-					'dark-neutral': '#222222'
+					'dark-neutral': '#222222',
+					teal: '#38B2AC',
+					'light-teal': '#E6FFFA',
+					purple: '#805AD5',
+					'light-purple': '#F3E8FF',
+					coral: '#FF6B6B',
+					'light-coral': '#FFEBEB',
+					blue: '#4299E1',
+					'light-blue': '#EBF8FF'
 				}
 			},
 			borderRadius: {
@@ -73,13 +80,16 @@ export default {
 			},
 			fontFamily: {
 				sans: ['Poppins', 'Inter', 'system-ui', 'sans-serif'],
-				serif: ['serif']
+				serif: ['Playfair Display', 'serif'],
+				mono: ['Roboto Mono', 'monospace']
 			},
 			boxShadow: {
 				'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
 				'neomorphic': '10px 10px 20px #d1d1d1, -10px -10px 20px #ffffff',
 				'soft': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)',
-				'hover': '0 15px 30px -5px rgba(0, 0, 0, 0.07), 0 10px 15px -5px rgba(0, 0, 0, 0.01)'
+				'hover': '0 15px 30px -5px rgba(0, 0, 0, 0.07), 0 10px 15px -5px rgba(0, 0, 0, 0.01)',
+				'card': '0 0 20px rgba(0, 0, 0, 0.05)',
+				'glow': '0 0 15px rgba(26, 135, 83, 0.5)'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -106,26 +116,26 @@ export default {
 					'0%': { transform: 'translateX(0)' },
 					'100%': { transform: 'translateX(100%)' }
 				},
-				'pulse-soft': {
-					'0%, 100%': { opacity: '1' },
-					'50%': { opacity: '0.8' }
+				'slide-up': {
+					'0%': { transform: 'translateY(20px)', opacity: '0' },
+					'100%': { transform: 'translateY(0)', opacity: '1' }
 				},
-				'shimmer': {
-					'0%': { backgroundPosition: '-468px 0' },
-					'100%': { backgroundPosition: '468px 0' }
+				'slide-down': {
+					'0%': { transform: 'translateY(-20px)', opacity: '0' },
+					'100%': { transform: 'translateY(0)', opacity: '1' }
 				},
-				'float': {
+				'bounce-subtle': {
 					'0%, 100%': { transform: 'translateY(0)' },
 					'50%': { transform: 'translateY(-5px)' }
 				},
-				'scale-subtle': {
-					'0%, 100%': { transform: 'scale(1)' },
-					'50%': { transform: 'scale(1.03)' }
-				},
-				'rotate-gradient': {
+				'gradient-shift': {
 					'0%': { backgroundPosition: '0% 50%' },
 					'50%': { backgroundPosition: '100% 50%' },
 					'100%': { backgroundPosition: '0% 50%' }
+				},
+				'rotate-slow': {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' }
 				}
 			},
 			animation: {
@@ -135,11 +145,18 @@ export default {
 				'fade-out': 'fade-out 0.4s ease-out',
 				'slide-in': 'slide-in 0.3s ease-out',
 				'slide-out': 'slide-out 0.3s ease-out',
-				'pulse-soft': 'pulse-soft 2s infinite ease-in-out',
-				'shimmer': 'shimmer 1.5s infinite linear',
-				'float': 'float 3s infinite ease-in-out',
-				'scale-subtle': 'scale-subtle 3s infinite ease-in-out',
-				'rotate-gradient': 'rotate-gradient 3s ease infinite'
+				'slide-up': 'slide-up 0.6s ease-out',
+				'slide-down': 'slide-down 0.6s ease-out',
+				'bounce-subtle': 'bounce-subtle 2s infinite ease-in-out',
+				'gradient-shift': 'gradient-shift 3s ease infinite',
+				'rotate-slow': 'rotate-slow 8s linear infinite'
+			},
+			backgroundImage: {
+				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+				'hero-pattern': 'url("/images/hero-pattern.svg")',
+				'green-gradient': 'linear-gradient(90deg, #1A8753 0%, #38B2AC 100%)',
+				'yellow-gradient': 'linear-gradient(90deg, #FFD700 0%, #FFA500 100%)',
+				'purple-gradient': 'linear-gradient(90deg, #805AD5 0%, #D53F8C 100%)'
 			}
 		}
 	},

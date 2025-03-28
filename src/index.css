@@ -1,6 +1,8 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -40,20 +42,20 @@
   }
 
   .dark {
-    --background: 224 71.4% 4.1%;
+    --background: 224 71.4% 6%;
     --foreground: 210 20% 98%;
 
-    --card: 224 71.4% 4.1%;
+    --card: 224 71.4% 8%;
     --card-foreground: 210 20% 98%;
 
-    --popover: 224 71.4% 4.1%;
+    --popover: 224 71.4% 5%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 142 68% 29%;
+    --primary: 142 60% 45%;
     --primary-foreground: 210 20% 98%;
 
-    --secondary: 60 100% 50%;
-    --secondary-foreground: 220 76% 5%;
+    --secondary: 60 70% 50%;
+    --secondary-foreground: 220 76% 10%;
 
     --muted: 215 27.9% 16.9%;
     --muted-foreground: 217.9 10.6% 64.9%;
@@ -61,12 +63,12 @@
     --accent: 215 27.9% 16.9%;
     --accent-foreground: 210 20% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 50.6%;
     --destructive-foreground: 210 20% 98%;
 
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-    --ring: 142 68% 29%;
+    --ring: 142 60% 45%;
   }
 }
 
@@ -88,31 +90,43 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-medium tracking-tight;
   }
+  
+  h1 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+  }
+  
+  h2 {
+    @apply text-2xl md:text-3xl lg:text-4xl;
+  }
+  
+  h3 {
+    @apply text-xl md:text-2xl;
+  }
 }
 
 @layer utilities {
   .glass-morphism {
-    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-glass;
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-glass dark:bg-black/40 dark:border-white/10;
   }
   
   .glass-card {
-    @apply bg-white/80 backdrop-blur-md border border-white/40 shadow-lg rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+    @apply bg-white/80 backdrop-blur-md border border-white/40 shadow-lg rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 dark:bg-black/40 dark:border-white/10;
   }
   
   .neo-morphism {
-    @apply bg-huduma-neutral shadow-neomorphic rounded-2xl;
+    @apply bg-huduma-neutral shadow-neomorphic rounded-2xl dark:bg-gray-800 dark:shadow-none;
   }
   
   .premium-card {
-    @apply relative overflow-hidden border-2 border-huduma-green/20 before:absolute before:inset-0 before:bg-gradient-to-br before:from-huduma-light-green/20 before:to-huduma-green/5 before:opacity-50;
+    @apply relative overflow-hidden border-2 border-huduma-green/20 before:absolute before:inset-0 before:bg-gradient-to-br before:from-huduma-light-green/20 before:to-huduma-green/5 before:opacity-50 dark:border-huduma-green/40 dark:before:from-huduma-green/10 dark:before:to-huduma-green/5;
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-huduma-green to-huduma-yellow bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-huduma-green to-huduma-teal bg-clip-text text-transparent;
   }
   
   .animated-border {
-    @apply relative before:absolute before:inset-0 before:rounded-lg before:p-[2px] before:bg-gradient-to-r before:from-huduma-green before:via-huduma-light-green before:to-huduma-yellow before:animate-rotate-gradient before:-z-10;
+    @apply relative before:absolute before:inset-0 before:rounded-lg before:p-[2px] before:bg-gradient-to-r before:from-huduma-green before:via-huduma-teal before:to-huduma-yellow before:animate-gradient-shift before:-z-10;
   }
   
   .subtle-shadow {
@@ -121,6 +135,14 @@
   
   .hover-lift {
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+  
+  .shimmer-effect {
+    @apply relative overflow-hidden before:absolute before:inset-0 before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:animate-shimmer;
+  }
+  
+  .colorful-card {
+    @apply relative overflow-hidden border border-transparent bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-gray-800 before:absolute before:inset-0 before:p-[1px] before:rounded-[inherit] before:bg-gradient-to-r before:from-huduma-green before:via-huduma-teal before:to-huduma-purple before:-z-10;
   }
 }
 
@@ -185,10 +207,45 @@
 
 /* Button and input focus styles */
 button:focus, input:focus, textarea:focus, select:focus {
-  @apply outline-none ring-2 ring-huduma-green/30 ring-offset-2 ring-offset-white;
+  @apply outline-none ring-2 ring-huduma-green/30 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
 }
 
 /* Card hover effects */
 .card-hover {
   @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+}
+
+/* Create colorful dots for status indicators */
+.status-dot {
+  @apply inline-block w-2 h-2 rounded-full mr-2;
+}
+
+.status-dot.available {
+  @apply bg-huduma-green;
+}
+
+.status-dot.busy {
+  @apply bg-huduma-coral;
+}
+
+.status-dot.away {
+  @apply bg-huduma-yellow;
+}
+
+/* Custom Buttons */
+.btn-gradient {
+  @apply relative overflow-hidden bg-gradient-to-r from-huduma-green to-huduma-teal text-white px-4 py-2 rounded-lg transition-all duration-300 hover:shadow-md hover:from-huduma-teal hover:to-huduma-green;
+}
+
+.btn-outline-gradient {
+  @apply relative border-2 border-transparent bg-white dark:bg-gray-800 text-huduma-green hover:text-white px-4 py-2 rounded-lg before:absolute before:inset-0 before:rounded-lg before:p-[2px] before:bg-gradient-to-r before:from-huduma-green before:to-huduma-teal before:-z-10 hover:before:opacity-100 before:opacity-80 transition-all hover:shadow-md;
+}
+
+/* New Section Styles */
+.section-heading {
+  @apply relative inline-block font-bold text-2xl md:text-3xl mb-6 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-1/4 after:h-1 after:bg-huduma-green after:rounded;
+}
+
+.feature-section {
+  @apply relative overflow-hidden bg-gradient-to-br from-huduma-light-green/50 to-huduma-light-teal/30 dark:from-huduma-green/10 dark:to-huduma-teal/5 rounded-2xl p-8 shadow-sm;
 }
