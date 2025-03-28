@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -114,6 +115,16 @@ type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
 
 type ToastActionElement = React.ReactElement<typeof ToastAction>
 
+// Add the toast function directly to break the circular dependency
+const toast = ({ ...props }: { title?: string; description?: string; variant?: "default" | "destructive" }) => {
+  // This is a simplified version that will be replaced by the actual implementation
+  return {
+    id: '',
+    dismiss: () => {},
+    update: () => {},
+  }
+}
+
 export {
   type ToastProps,
   type ToastActionElement,
@@ -124,4 +135,5 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
+  toast
 }

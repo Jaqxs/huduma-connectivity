@@ -26,8 +26,6 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <UserProvider>
-          <Toaster />
-          <Sonner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -62,6 +60,8 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          <Toaster />
+          <Sonner />
         </UserProvider>
       </AuthProvider>
     </TooltipProvider>
