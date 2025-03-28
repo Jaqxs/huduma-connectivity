@@ -1,5 +1,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -76,11 +77,16 @@
 
   html {
     -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Poppins', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
   }
 }
 
@@ -89,8 +95,32 @@
     @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-glass;
   }
   
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/40 shadow-lg rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+  
   .neo-morphism {
     @apply bg-huduma-neutral shadow-neomorphic rounded-2xl;
+  }
+  
+  .premium-card {
+    @apply relative overflow-hidden border-2 border-huduma-green/20 before:absolute before:inset-0 before:bg-gradient-to-br before:from-huduma-light-green/20 before:to-huduma-green/5 before:opacity-50;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-huduma-green to-huduma-yellow bg-clip-text text-transparent;
+  }
+  
+  .animated-border {
+    @apply relative before:absolute before:inset-0 before:rounded-lg before:p-[2px] before:bg-gradient-to-r before:from-huduma-green before:via-huduma-light-green before:to-huduma-yellow before:animate-rotate-gradient before:-z-10;
+  }
+  
+  .subtle-shadow {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
   }
 }
 
@@ -133,4 +163,32 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-huduma-green/60;
+}
+
+/* Custom animations */
+@keyframes rotate-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-rotate-gradient {
+  animation: rotate-gradient 3s ease infinite;
+  background-size: 200% 200%;
+}
+
+/* Button and input focus styles */
+button:focus, input:focus, textarea:focus, select:focus {
+  @apply outline-none ring-2 ring-huduma-green/30 ring-offset-2 ring-offset-white;
+}
+
+/* Card hover effects */
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
 }
