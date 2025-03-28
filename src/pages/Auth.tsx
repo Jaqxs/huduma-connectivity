@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -20,11 +21,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { GradientButton } from '@/components/ui/gradient-button';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Loader2, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const authFormSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -37,7 +39,9 @@ type AuthFormValues = z.infer<typeof authFormSchema>;
 const Auth: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const { signIn, signUp, user, isInitialized } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -51,13 +55,15 @@ const Auth: React.FC = () => {
   });
   
   useEffect(() => {
-    if (user) {
+    if (user && isInitialized) {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, navigate, isInitialized]);
   
   const onSubmit = async (data: AuthFormValues) => {
     setIsLoading(true);
+    setFormError(null);
+    setFormSuccess(null);
     
     try {
       if (isSignUp) {
@@ -65,17 +71,37 @@ const Auth: React.FC = () => {
           full_name: data.fullName 
         });
         
-        if (error) throw error;
-        
+        if (error) {
+          setFormError(error.message || 'Failed to create account');
+          console.error('Signup error:', error);
+        } else {
+          setFormSuccess('Account created successfully! Please check your email for verification.');
+          // Reset form after successful signup
+          form.reset({
+            email: '',
+            password: '',
+            fullName: '',
+          });
+        }
       } else {
         const { error } = await signIn(data.email, data.password);
         
-        if (error) throw error;
-        
-        navigate('/');
+        if (error) {
+          if (error.message?.includes('Invalid login credentials')) {
+            setFormError('Invalid email or password. Please try again.');
+          } else if (error.message?.includes('Email not confirmed')) {
+            setFormError('Please verify your email address before signing in.');
+          } else {
+            setFormError(error.message || 'Failed to sign in');
+          }
+          console.error('Signin error:', error);
+        } else {
+          // Will auto-redirect due to the useEffect
+        }
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
+      setFormError(error.message || 'An unexpected error occurred');
       toast({
         title: 'Authentication error',
         description: error.message || 'Please try again later',
@@ -84,6 +110,13 @@ const Auth: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const toggleAuthMode = () => {
+    setIsSignUp(!isSignUp);
+    setFormError(null);
+    setFormSuccess(null);
+    form.reset();
   };
   
   return (
@@ -100,15 +133,31 @@ const Auth: React.FC = () => {
           </p>
         </div>
 
-        <Card className="w-full backdrop-blur-sm bg-white/90 border-0 shadow-hover animate-fade-in">
+        <Card className="w-full backdrop-blur-sm bg-white/90 border-0 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in">
           <CardHeader className="pb-4">
             <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-huduma-green to-huduma-teal flex items-center justify-center shadow-glow animate-bounce-subtle">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-huduma-green to-huduma-teal flex items-center justify-center shadow-glow animate-pulse">
                 <span className="text-white font-bold text-2xl">H</span>
               </div>
             </div>
           </CardHeader>
           <CardContent className="px-6 pt-0">
+            {formError && (
+              <Alert variant="destructive" className="mb-4 animate-fade-in">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{formError}</AlertDescription>
+              </Alert>
+            )}
+            
+            {formSuccess && (
+              <Alert variant="default" className="mb-4 bg-huduma-light-green/50 text-huduma-green border-huduma-green/20 animate-fade-in">
+                <CheckCircle className="h-4 w-4" />
+                <AlertTitle>Success</AlertTitle>
+                <AlertDescription>{formSuccess}</AlertDescription>
+              </Alert>
+            )}
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 {isSignUp && (
@@ -124,7 +173,7 @@ const Auth: React.FC = () => {
                             <Input 
                               placeholder="John Doe" 
                               {...field} 
-                              className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50" 
+                              className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50 transition-all" 
                             />
                           </div>
                         </FormControl>
@@ -147,7 +196,8 @@ const Auth: React.FC = () => {
                             type="email" 
                             placeholder="you@example.com" 
                             {...field} 
-                            className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50" 
+                            className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50 transition-all" 
+                            autoComplete={isSignUp ? "email" : "username"}
                           />
                         </div>
                       </FormControl>
@@ -169,7 +219,8 @@ const Auth: React.FC = () => {
                             type="password" 
                             placeholder="••••••••" 
                             {...field} 
-                            className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50" 
+                            className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50 transition-all" 
+                            autoComplete={isSignUp ? "new-password" : "current-password"}
                           />
                         </div>
                       </FormControl>
@@ -207,9 +258,10 @@ const Auth: React.FC = () => {
                 {isSignUp ? 'Already have an account?' : "Don't have an account?"}
               </span>{' '}
               <button
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={toggleAuthMode}
                 className="text-huduma-green hover:underline font-medium inline-flex items-center"
                 type="button"
+                disabled={isLoading}
               >
                 {isSignUp ? (
                   <>

@@ -1,17 +1,13 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
-import { Calendar, Star, MapPin, Clock, Award, Shield, MessageCircle, CheckCircle, Phone, Mail, User, Briefcase } from 'lucide-react';
+import { Star, MapPin, Clock, Award, Shield, MessageCircle, CheckCircle, Phone, Mail, User, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/components/ui/use-toast';
-
-// This component represents the professional's detail page
-// This is just a basic mockup, we'll need to connect it to the API
+import { useToast } from '@/hooks/use-toast';
+import BookingForm from '@/components/booking/BookingForm';
 
 const ProfessionalDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,12 +36,36 @@ const ProfessionalDetail = () => {
           available: true,
           bio: 'Professional plumber with over 10 years of experience. Specializing in commercial and residential plumbing services including installations, repairs, and maintenance.',
           services: [
-            'Water Heater Installation',
-            'Drain Cleaning',
-            'Pipe Repair',
-            'Faucet Installation',
-            'Toilet Repair',
-            'Sewer Line Services'
+            {
+              id: 's1',
+              title: 'Water Heater Installation',
+              price: 25000
+            },
+            {
+              id: 's2',
+              title: 'Drain Cleaning',
+              price: 15000
+            },
+            {
+              id: 's3',
+              title: 'Pipe Repair',
+              price: 20000
+            },
+            {
+              id: 's4',
+              title: 'Faucet Installation',
+              price: 12000
+            },
+            {
+              id: 's5',
+              title: 'Toilet Repair',
+              price: 18000
+            },
+            {
+              id: 's6',
+              title: 'Sewer Line Services',
+              price: 30000
+            }
           ],
           availability: 'Monday to Friday, 8 AM - 6 PM',
           hourlyRate: 25000,
@@ -93,22 +113,6 @@ const ProfessionalDetail = () => {
     
     fetchProfessional();
   }, [id]);
-  
-  const handleBookAppointment = () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to book an appointment",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    toast({
-      title: "Appointment Request Sent",
-      description: "Your appointment request has been sent to the professional",
-    });
-  };
   
   const handleSendMessage = () => {
     if (!user) {
@@ -207,55 +211,11 @@ const ProfessionalDetail = () => {
                       Message
                     </Button>
                     
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button className="bg-gradient-to-r from-huduma-green to-huduma-teal hover:shadow-glow transition-all">
-                          <Calendar size={18} className="mr-1" />
-                          Book Now
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Book Appointment</DialogTitle>
-                        </DialogHeader>
-                        
-                        <div className="py-4">
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium mb-1">Select Date</label>
-                            <input type="date" className="w-full p-2 border rounded-md" />
-                          </div>
-                          
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium mb-1">Select Time</label>
-                            <select className="w-full p-2 border rounded-md">
-                              <option>9:00 AM</option>
-                              <option>10:00 AM</option>
-                              <option>11:00 AM</option>
-                              <option>1:00 PM</option>
-                              <option>2:00 PM</option>
-                              <option>3:00 PM</option>
-                              <option>4:00 PM</option>
-                            </select>
-                          </div>
-                          
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium mb-1">Service Needed</label>
-                            <select className="w-full p-2 border rounded-md">
-                              {professional.services.map((service: string, index: number) => (
-                                <option key={index}>{service}</option>
-                              ))}
-                            </select>
-                          </div>
-                          
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium mb-1">Additional Notes</label>
-                            <textarea className="w-full p-2 border rounded-md h-24" placeholder="Describe what you need help with..."></textarea>
-                          </div>
-                          
-                          <Button onClick={handleBookAppointment} className="w-full bg-gradient-to-r from-huduma-green to-huduma-teal">Confirm Booking</Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <BookingForm
+                      professionalId={professional.id}
+                      professionalName={professional.name}
+                      services={professional.services}
+                    />
                   </div>
                 </div>
               </div>
@@ -329,15 +289,33 @@ const ProfessionalDetail = () => {
                   <h2 className="text-xl font-semibold mb-4">Services Offered</h2>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {professional.services.map((service: string, index: number) => (
+                    {professional.services.map((service: any, index: number) => (
                       <div 
-                        key={index} 
-                        className="p-4 border border-border bg-background hover:border-huduma-green/30 hover:bg-huduma-light-green/10 rounded-lg transition-colors flex items-center gap-3"
+                        key={service.id} 
+                        className="p-4 border border-border bg-background hover:border-huduma-green/30 hover:bg-huduma-light-green/10 rounded-lg transition-colors"
                       >
-                        <div className="w-10 h-10 rounded-full bg-huduma-light-green flex items-center justify-center text-huduma-green">
-                          <CheckCircle size={18} />
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-full bg-huduma-light-green flex items-center justify-center text-huduma-green">
+                            <CheckCircle size={18} />
+                          </div>
+                          <span className="font-medium">{service.title}</span>
                         </div>
-                        <span>{service}</span>
+                        <div className="ml-13 flex justify-between items-center">
+                          <div className="text-huduma-green font-semibold">
+                            TZS {service.price.toLocaleString()}
+                          </div>
+                          <BookingForm
+                            professionalId={professional.id}
+                            serviceId={service.id}
+                            professionalName={professional.name}
+                            services={[service]}
+                            trigger={
+                              <Button size="sm" variant="outline" className="border-huduma-green text-huduma-green hover:bg-huduma-light-green">
+                                Book Service
+                              </Button>
+                            }
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -446,13 +424,16 @@ const ProfessionalDetail = () => {
               </div>
               
               <div className="mt-6 pt-4 border-t border-border">
-                <Button 
-                  onClick={handleBookAppointment}
-                  className="w-full bg-gradient-to-r from-huduma-green to-huduma-teal hover:shadow-glow transition-all"
-                >
-                  <Calendar size={18} className="mr-2" />
-                  Book Appointment
-                </Button>
+                <BookingForm
+                  professionalId={professional.id}
+                  professionalName={professional.name}
+                  services={professional.services}
+                  trigger={
+                    <Button className="w-full bg-gradient-to-r from-huduma-green to-huduma-teal hover:shadow-glow transition-all">
+                      Book Appointment
+                    </Button>
+                  }
+                />
               </div>
             </div>
             

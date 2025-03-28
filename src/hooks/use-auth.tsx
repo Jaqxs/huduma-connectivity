@@ -6,7 +6,7 @@ import {
   AuthChangeEvent 
 } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
   id: string;
@@ -33,6 +33,7 @@ interface AuthContextType {
   subscription: Subscription | null;
   session: Session | null;
   isLoading: boolean;
+  isInitialized: boolean;
   signUp: (email: string, password: string, metadata?: { full_name?: string }) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -48,17 +49,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Set up auth state listener FIRST to avoid missing auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, currentSession: Session | null) => {
+      (event: AuthChangeEvent, currentSession: Session | null) => {
         console.log('Auth state changed:', event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
+          // Use setTimeout to avoid potential deadlocks with Supabase auth
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id);
             fetchUserSubscription(currentSession.user.id);
@@ -75,6 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
         if (currentSession?.user) {
           await fetchUserProfile(currentSession.user.id);
           await fetchUserSubscription(currentSession.user.id);
@@ -83,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error initializing auth:', error);
       } finally {
         setIsLoading(false);
+        setIsInitialized(true);
       }
     };
     
@@ -99,10 +106,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      setProfile(data as UserProfile);
+      
+      if (data) {
+        setProfile(data as UserProfile);
+      } else {
+        console.log('No profile found for user', userId);
+        // Create basic profile if none exists
+        const { error: createError } = await supabase
+          .from('profiles')
+          .insert([{ id: userId }]);
+          
+        if (createError) throw createError;
+        
+        // Fetch the newly created profile
+        const { data: newProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+          
+        setProfile(newProfile as UserProfile);
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
@@ -117,17 +144,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
-      if (error) {
-        if (error.code !== 'PGRST116') { // No rows returned
-          throw error;
-        }
-        setSubscription(null);
-        return;
+      if (error && error.code !== 'PGRST116') { // Ignore "No rows returned" error
+        throw error;
       }
       
-      setSubscription(data as Subscription);
+      setSubscription(data as Subscription | null);
     } catch (error) {
       console.error('Error fetching user subscription:', error);
       setSubscription(null);
@@ -136,11 +159,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, metadata?: { full_name?: string }) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: metadata
+          data: metadata,
+          emailRedirectTo: window.location.origin
         }
       });
       
@@ -155,12 +180,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error signing up:', error);
       return { error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
@@ -176,11 +204,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error signing in:', error);
       return { error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
       await supabase.auth.signOut();
       toast({
         title: "Signed out successfully",
@@ -192,6 +223,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "Please try again",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -237,6 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     subscription,
     session,
     isLoading,
+    isInitialized,
     signUp,
     signIn,
     signOut,
