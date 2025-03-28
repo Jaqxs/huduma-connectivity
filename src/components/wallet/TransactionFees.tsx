@@ -1,14 +1,18 @@
 
 import React from 'react';
 import { BadgeDollarSign, CircleDollarSign } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
 
 interface TransactionFeesProps {
-  userSubscription?: 'free' | 'premium' | 'pro';
+  className?: string;
 }
 
-const TransactionFees: React.FC<TransactionFeesProps> = ({ 
-  userSubscription = 'free' 
-}) => {
+const TransactionFees: React.FC<TransactionFeesProps> = ({ className }) => {
+  const { subscription } = useAuth();
+  
+  const userSubscription = subscription?.plan || 'free';
+  
   const getFeePercentage = () => {
     switch (userSubscription) {
       case 'premium':
@@ -21,7 +25,7 @@ const TransactionFees: React.FC<TransactionFeesProps> = ({
   };
   
   return (
-    <div className="bg-white rounded-2xl border border-border p-5">
+    <div className={`bg-white rounded-2xl border border-border p-5 ${className}`}>
       <div className="flex items-center gap-3 mb-3">
         <div className="w-10 h-10 bg-huduma-light-green rounded-full flex items-center justify-center text-huduma-green">
           <CircleDollarSign size={20} />
@@ -43,14 +47,24 @@ const TransactionFees: React.FC<TransactionFeesProps> = ({
         {userSubscription === 'free' && (
           <div className="flex items-center gap-2 text-sm text-foreground/70">
             <BadgeDollarSign size={16} className="text-huduma-green" />
-            <span>Upgrade to Premium for lower transaction fees (3%)</span>
+            <span>
+              <Link to="/premium" className="text-huduma-green hover:underline">
+                Upgrade to Premium
+              </Link>{' '}
+              for lower transaction fees (3%)
+            </span>
           </div>
         )}
         
         {userSubscription === 'premium' && (
           <div className="flex items-center gap-2 text-sm text-foreground/70">
             <BadgeDollarSign size={16} className="text-huduma-green" />
-            <span>Upgrade to Pro for minimum transaction fees (1.5%)</span>
+            <span>
+              <Link to="/premium" className="text-huduma-green hover:underline">
+                Upgrade to Pro
+              </Link>{' '}
+              for minimum transaction fees (1.5%)
+            </span>
           </div>
         )}
       </div>

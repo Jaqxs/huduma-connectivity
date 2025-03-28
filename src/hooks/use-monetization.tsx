@@ -1,6 +1,8 @@
 
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 
 export interface PaymentMethod {
   id: string;
@@ -27,6 +29,7 @@ export interface PurchaseItem {
 export function useMonetization() {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const { user } = useAuth();
   
   const subscriptionPlans: SubscriptionPlan[] = [
     {
@@ -86,19 +89,66 @@ export function useMonetization() {
   ];
   
   const subscribeToPlan = async (planId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to subscribe to a plan",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     setIsProcessing(true);
     
     try {
-      // This is where you would integrate with a payment provider API
-      // For now, we'll simulate a successful subscription
+      // First, make any existing subscriptions inactive
+      await supabase
+        .from('subscriptions')
+        .update({ is_active: false })
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+      
+      // Create a new subscription
       const plan = subscriptionPlans.find(p => p.id === planId);
       
       if (!plan) {
         throw new Error('Invalid plan selected');
       }
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Calculate expires_at (1 month from now)
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+      
+      // Create a subscription in the database
+      const { error } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: user.id,
+          plan: plan.name,
+          starts_at: new Date().toISOString(),
+          expires_at: plan.name === 'free' ? null : expiresAt.toISOString(),
+          is_active: true,
+          payment_id: plan.name === 'free' ? null : `payment_${Date.now()}`,
+        });
+      
+      if (error) throw error;
+      
+      // Create a transaction record if it's a paid plan
+      if (plan.name !== 'free') {
+        const { error: transactionError } = await supabase
+          .from('transactions')
+          .insert({
+            user_id: user.id,
+            type: 'payment',
+            amount: plan.price,
+            method: 'card',
+            status: 'completed',
+            reference: `sub_${Date.now()}`,
+            description: `Subscription to ${plan.name} plan`,
+          });
+        
+        if (transactionError) throw transactionError;
+      }
       
       toast({
         title: "Subscription Successful",
@@ -120,19 +170,61 @@ export function useMonetization() {
   };
   
   const makePurchase = async (itemId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to make a purchase",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     setIsProcessing(true);
     
     try {
-      // This is where you would integrate with a payment provider API
-      // For now, we'll simulate a successful purchase
       const item = oneTimePurchases.find(i => i.id === itemId);
       
       if (!item) {
         throw new Error('Invalid item selected');
       }
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create a transaction record
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          type: 'payment',
+          amount: item.price,
+          method: 'card',
+          status: 'completed',
+          reference: `purchase_${Date.now()}`,
+          description: `Purchase of ${item.name}`,
+        });
+      
+      if (error) throw error;
+      
+      // Update user profile if purchasing verification badge
+      if (itemId === 'verified_badge') {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            is_verified: true,
+            verification_date: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+        
+        if (profileError) throw profileError;
+      }
+      
+      // Update service as featured if purchasing featured listing
+      if (itemId === 'featured_listing') {
+        // In a real app, you would let the user select which service to feature
+        // For now, we'll just display a message
+        toast({
+          title: "Feature Available",
+          description: "You can now feature your services from the services page!",
+        });
+      }
       
       toast({
         title: "Purchase Successful",

@@ -1,10 +1,14 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { CheckCircle, BadgeDollarSign, CreditCard, Shield } from 'lucide-react';
+import { CheckCircle, BadgeDollarSign, CreditCard, Shield, Loader2 } from 'lucide-react';
 import { useUserContext } from '@/context/UserContext';
 import { useMonetization } from '@/hooks/use-monetization';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/components/ui/use-toast';
 
 const Monetization: React.FC = () => {
   const { userMode } = useUserContext();
@@ -15,6 +19,73 @@ const Monetization: React.FC = () => {
     subscribeToPlan, 
     makePurchase 
   } = useMonetization();
+  const { user, profile, subscription, refreshProfile } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    // Redirect to auth if user is not logged in
+    if (!user && !isLoading) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to access premium features",
+      });
+      navigate('/auth');
+    }
+  }, [user, isLoading, navigate, toast]);
+  
+  useEffect(() => {
+    // Set loading to false once profile and subscription data is loaded
+    if (profile !== undefined) {
+      setIsLoading(false);
+    }
+  }, [profile, subscription]);
+  
+  const getCurrentPlan = () => {
+    return subscription?.plan || 'free';
+  };
+  
+  const handleSubscribe = async (planId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to subscribe to a plan",
+      });
+      navigate('/auth');
+      return;
+    }
+    
+    const result = await subscribeToPlan(planId);
+    if (result) {
+      // Refresh profile to get updated subscription data
+      await refreshProfile();
+    }
+  };
+  
+  const handlePurchase = async (itemId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to make a purchase",
+      });
+      navigate('/auth');
+      return;
+    }
+    
+    await makePurchase(itemId);
+  };
+  
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-huduma-green mb-4" />
+          <p className="text-foreground/70">Loading subscription data...</p>
+        </div>
+      </Layout>
+    );
+  }
   
   return (
     <Layout>
@@ -29,6 +100,23 @@ const Monetization: React.FC = () => {
         </p>
       </div>
       
+      {/* Current Subscription */}
+      <div className="mb-8 p-4 bg-huduma-light-green/20 rounded-xl border border-huduma-green/20">
+        <div className="flex items-center gap-4">
+          <div className="bg-white p-3 rounded-full">
+            <BadgeDollarSign size={24} className="text-huduma-green" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">Current Plan: <span className="capitalize">{getCurrentPlan()}</span></h3>
+            <p className="text-sm text-foreground/70">
+              {getCurrentPlan() === 'free' 
+                ? 'Upgrade to unlock premium features and benefits' 
+                : `Your ${getCurrentPlan()} subscription is active`}
+            </p>
+          </div>
+        </div>
+      </div>
+      
       {/* Subscription Plans */}
       <h2 className="text-xl font-bold mb-4">Subscription Plans</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -37,12 +125,20 @@ const Monetization: React.FC = () => {
             key={plan.id}
             className={cn(
               "border-border hover:border-huduma-green hover:shadow-md transition-all",
-              plan.name === 'premium' && "border-huduma-green shadow-md relative"
+              plan.name === 'premium' && "border-huduma-green shadow-md relative",
+              plan.name === getCurrentPlan() && "bg-huduma-neutral border-huduma-green"
             )}
           >
             {plan.name === 'premium' && (
               <div className="absolute top-0 right-0 bg-huduma-green text-white py-1 px-3 rounded-bl-lg rounded-tr-lg text-xs font-medium">
                 POPULAR
+              </div>
+            )}
+            {plan.name === getCurrentPlan() && (
+              <div className="absolute top-3 right-3">
+                <div className="bg-huduma-green text-white p-1 rounded-full">
+                  <CheckCircle size={16} />
+                </div>
               </div>
             )}
             <CardHeader className="pb-2">
@@ -65,20 +161,26 @@ const Monetization: React.FC = () => {
             </CardContent>
             <CardFooter>
               <button 
-                onClick={() => subscribeToPlan(plan.id)}
-                disabled={plan.name === 'free' || isProcessing}
+                onClick={() => handleSubscribe(plan.id)}
+                disabled={plan.name === getCurrentPlan() || isProcessing}
                 className={cn(
                   "w-full py-2 rounded-lg font-medium",
-                  plan.name === 'free' 
-                    ? "bg-huduma-neutral text-foreground" 
+                  plan.name === getCurrentPlan() 
+                    ? "bg-huduma-neutral text-foreground cursor-not-allowed" 
                     : plan.name === 'premium'
                       ? "bg-huduma-green text-white hover:bg-huduma-green/90"
-                      : "bg-huduma-light-green text-huduma-green hover:bg-huduma-green hover:text-white",
+                      : plan.name === 'free'
+                        ? "bg-foreground/10 text-foreground hover:bg-foreground/20"
+                        : "bg-huduma-light-green text-huduma-green hover:bg-huduma-green hover:text-white",
                   "transition-colors",
                   isProcessing && "opacity-70 cursor-not-allowed"
                 )}
               >
-                {plan.name === 'free' ? 'Current Plan' : isProcessing ? 'Processing...' : 'Subscribe Now'}
+                {plan.name === getCurrentPlan() 
+                  ? 'Current Plan' 
+                  : isProcessing 
+                    ? 'Processing...' 
+                    : 'Subscribe Now'}
               </button>
             </CardFooter>
           </Card>
@@ -116,7 +218,7 @@ const Monetization: React.FC = () => {
             </CardContent>
             <CardFooter>
               <button 
-                onClick={() => makePurchase(item.id)}
+                onClick={() => handlePurchase(item.id)}
                 disabled={isProcessing}
                 className={cn(
                   "w-full py-2 bg-huduma-light-green text-huduma-green rounded-lg font-medium hover:bg-huduma-green hover:text-white transition-colors",

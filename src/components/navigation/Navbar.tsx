@@ -1,15 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Calendar, Wallet, User, Menu, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Search, Calendar, Wallet, User, Menu, X, LogOut, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ModeToggle from '@/components/ui/ModeToggle';
 import { useUserContext } from '@/context/UserContext';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import PremiumBadge from '@/components/ui/PremiumBadge';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { userMode } = useUserContext();
+  const { user, profile, subscription, signOut } = useAuth();
   
   // Close menu when route changes
   useEffect(() => {
@@ -31,18 +36,34 @@ const Navbar: React.FC = () => {
       name: 'Appointments',
       path: '/appointments',
       icon: <Calendar size={20} />,
+      requiresAuth: true,
     },
     {
       name: 'Wallet',
       path: '/wallet',
       icon: <Wallet size={20} />,
+      requiresAuth: true,
     },
     {
       name: 'Profile',
       path: '/profile',
       icon: <User size={20} />,
+      requiresAuth: true,
     },
   ];
+  
+  // Filter items based on authentication status
+  const filteredNavItems = navItems.filter(item => 
+    !item.requiresAuth || (item.requiresAuth && user)
+  );
+  
+  const handleAuthAction = () => {
+    if (user) {
+      signOut();
+    } else {
+      navigate('/auth');
+    }
+  };
   
   return (
     <>
@@ -58,6 +79,35 @@ const Navbar: React.FC = () => {
           
           <div className="flex items-center gap-4">
             <ModeToggle className="hidden md:flex" />
+            
+            {user ? (
+              <div className="hidden md:flex items-center gap-3">
+                {subscription && subscription.plan !== 'free' && (
+                  <PremiumBadge level={subscription.plan as 'premium' | 'pro'} size="sm" />
+                )}
+                <span className="text-sm font-medium truncate max-w-[120px]">
+                  {profile?.full_name || user.email}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={handleAuthAction}
+                  className="text-foreground/70 hover:text-foreground"
+                >
+                  <LogOut size={18} />
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleAuthAction}
+                className="hidden md:flex gap-1 border-huduma-green text-huduma-green hover:bg-huduma-light-green"
+              >
+                <LogIn size={16} />
+                <span>Sign In</span>
+              </Button>
+            )}
             
             <button 
               onClick={() => setIsOpen(!isOpen)} 
@@ -97,10 +147,32 @@ const Navbar: React.FC = () => {
             </button>
           </div>
           
+          {user && (
+            <div className="mb-6 p-3 bg-huduma-neutral rounded-xl flex items-center gap-3">
+              {profile?.avatar_url ? (
+                <img 
+                  src={profile.avatar_url} 
+                  alt={profile.full_name || ''} 
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-huduma-green/20 flex items-center justify-center">
+                  <User size={20} className="text-huduma-green" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{profile?.full_name || user.email}</p>
+                {subscription && subscription.plan !== 'free' && (
+                  <PremiumBadge level={subscription.plan as 'premium' | 'pro'} size="sm" />
+                )}
+              </div>
+            </div>
+          )}
+          
           <ModeToggle className="mb-8 self-start" />
           
           <div className="flex flex-col gap-4">
-            {navItems.map((item) => (
+            {filteredNavItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -115,13 +187,33 @@ const Navbar: React.FC = () => {
                 <span>{item.name}</span>
               </Link>
             ))}
+            
+            {user ? (
+              <button
+                onClick={handleAuthAction}
+                className="flex items-center gap-3 py-3 px-4 rounded-xl transition-colors text-foreground/70 hover:bg-huduma-neutral"
+              >
+                <LogOut size={20} />
+                <span>Sign Out</span>
+              </button>
+            ) : (
+              <Link
+                to="/auth"
+                className="flex items-center gap-3 py-3 px-4 rounded-xl transition-colors bg-huduma-green text-white"
+              >
+                <LogIn size={20} />
+                <span>Sign In</span>
+              </Link>
+            )}
           </div>
           
           <div className="mt-auto pt-8 border-t">
-            <div className="glass-morphism rounded-xl p-4">
-              <h3 className="font-medium mb-2">Let Us Be of Your Service</h3>
-              <p className="text-sm text-foreground/70 mb-4">Switch to professional mode to offer your skills</p>
-            </div>
+            <Link to="/premium" className="glass-morphism rounded-xl p-4 block">
+              <h3 className="font-medium mb-2">Upgrade to Premium</h3>
+              <p className="text-sm text-foreground/70 mb-4">
+                Unlock premium features and boost your Huduma experience
+              </p>
+            </Link>
           </div>
         </div>
       </div>
@@ -129,7 +221,7 @@ const Navbar: React.FC = () => {
       {/* Bottom Navigation for Mobile */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-lg border-t border-border md:hidden">
         <div className="flex items-center justify-around h-16">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
@@ -144,6 +236,16 @@ const Navbar: React.FC = () => {
               <span className="text-xs">{item.name}</span>
             </Link>
           ))}
+          
+          {!user && (
+            <Link
+              to="/auth"
+              className="flex flex-col items-center justify-center gap-1 h-full flex-1 transition-colors text-foreground/60"
+            >
+              <LogIn size={20} />
+              <span className="text-xs">Sign In</span>
+            </Link>
+          )}
         </div>
       </nav>
       
@@ -157,10 +259,34 @@ const Navbar: React.FC = () => {
             <span className="font-semibold text-xl">Huduma</span>
           </Link>
           
+          {user && (
+            <div className="mb-6 p-3 bg-huduma-neutral rounded-xl flex items-center gap-3">
+              {profile?.avatar_url ? (
+                <img 
+                  src={profile.avatar_url} 
+                  alt={profile.full_name || ''} 
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-huduma-green/20 flex items-center justify-center">
+                  <User size={20} className="text-huduma-green" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{profile?.full_name || user.email}</p>
+                {subscription && subscription.plan !== 'free' && (
+                  <div className="mt-1">
+                    <PremiumBadge level={subscription.plan as 'premium' | 'pro'} size="sm" />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
           <ModeToggle className="mb-8" />
           
           <div className="flex flex-col gap-2">
-            {navItems.map((item) => (
+            {filteredNavItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -175,17 +301,33 @@ const Navbar: React.FC = () => {
                 <span>{item.name}</span>
               </Link>
             ))}
+            
+            {user ? (
+              <button
+                onClick={handleAuthAction}
+                className="flex items-center gap-3 py-3 px-4 rounded-xl transition-colors text-foreground/70 hover:bg-huduma-neutral mt-2"
+              >
+                <LogOut size={20} />
+                <span>Sign Out</span>
+              </button>
+            ) : (
+              <Link
+                to="/auth"
+                className="flex items-center gap-3 py-3 px-4 rounded-xl transition-colors bg-huduma-green text-white mt-2"
+              >
+                <LogIn size={20} />
+                <span>Sign In</span>
+              </Link>
+            )}
           </div>
           
           <div className="mt-auto pt-6">
-            <div className="glass-morphism rounded-xl p-4 border border-huduma-green/10">
-              <h3 className="font-medium mb-2">Let Us Be of Your Service</h3>
+            <Link to="/premium" className="glass-morphism rounded-xl p-4 block border border-huduma-green/10">
+              <h3 className="font-medium mb-2">Upgrade to Premium</h3>
               <p className="text-sm text-foreground/70 mb-4">
-                {userMode === 'customer' 
-                  ? 'Need work done? Find the perfect professional!' 
-                  : 'Offer your services to thousands of customers!'}
+                Unlock premium features and boost your Huduma experience
               </p>
-            </div>
+            </Link>
           </div>
         </div>
       </aside>
