@@ -4,6 +4,9 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 
+// Import the Supabase URL from the client file
+import { SUPABASE_URL } from '@/integrations/supabase/client';
+
 export interface WalletTransaction {
   id: string;
   user_id: string;
@@ -89,7 +92,7 @@ export function useWallet() {
     try {
       // In a real app, this would go through a payment gateway
       // For this demo, we'll use our edge function
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/process-payment`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/process-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,7 +167,7 @@ export function useWallet() {
     try {
       // In a real app, this would go through a payment gateway
       // For this demo, we'll use our edge function
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/process-payment`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/process-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
