@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, Filter, Wrench, Scissors, Briefcase, Brush, Car, Heart, BookOpen, MapPin, ArrowDownUp } from 'lucide-react';
+import { Search, Filter, Wrench, Scissors, Briefcase, Brush, Car, Heart, BookOpen, MapPin, ArrowDownUp, Hammer, Home, ChefHat, Code, Music, Camera, Plane, Laptop, Flower } from 'lucide-react';
 import CategoryPill from '@/components/ui/CategoryPill';
 import ServiceCard from '@/components/ui/ServiceCard';
 
@@ -20,6 +20,10 @@ const Services: React.FC = () => {
     { id: 'automotive', label: 'Automotive', icon: <Car size={16} /> },
     { id: 'health', label: 'Healthcare', icon: <Heart size={16} /> },
     { id: 'education', label: 'Education', icon: <BookOpen size={16} /> },
+    { id: 'home', label: 'Home Repair', icon: <Hammer size={16} /> },
+    { id: 'tech', label: 'Technology', icon: <Laptop size={16} /> },
+    { id: 'food', label: 'Food & Catering', icon: <ChefHat size={16} /> },
+    { id: 'design', label: 'Design & Creative', icon: <Flower size={16} /> },
   ];
   
   const sortOptions = [
@@ -30,8 +34,9 @@ const Services: React.FC = () => {
     { id: 'newest', label: 'Newest First' },
   ];
   
-  // Extended sample services data
+  // Extended sample services data with more diverse service types
   const allServices = [
+    // Original services
     {
       id: '1',
       title: 'Home Plumbing Services & Repairs',
@@ -131,6 +136,110 @@ const Services: React.FC = () => {
       location: 'Dodoma',
       estimatedTime: '1-2 hours',
     },
+    
+    // New services with more variety
+    {
+      id: '10',
+      title: 'Website Development & Design',
+      category: 'Technology',
+      image: 'https://images.unsplash.com/photo-1547658719-da2b51169166?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8d2ViJTIwZGVzaWdufGVufDB8fDB8fHww&auto=format&fit=crop&w=600&q=80',
+      rating: 4.9,
+      ratingCount: 124,
+      price: 350000,
+      location: 'Dar es Salaam',
+      estimatedTime: '2-3 weeks',
+      isPremium: true,
+    },
+    {
+      id: '11',
+      title: 'Professional Photography Services',
+      category: 'Design & Creative',
+      image: 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cGhvdG9ncmFwaHl8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=600&q=80',
+      rating: 4.7,
+      ratingCount: 86,
+      price: 180000,
+      location: 'Zanzibar',
+      estimatedTime: '2-4 hours',
+    },
+    {
+      id: '12',
+      title: 'Home Renovation & Remodeling',
+      category: 'Home Repair',
+      image: 'https://images.unsplash.com/photo-1581477397801-aff66f155b1e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGhvbWUlMjByZW5vdmF0aW9ufGVufDB8fDB8fHww&auto=format&fit=crop&w=600&q=80',
+      rating: 4.8,
+      ratingCount: 142,
+      price: 500000,
+      location: 'Mwanza',
+      estimatedTime: '1-2 weeks',
+      isPremium: true,
+    },
+    {
+      id: '13',
+      title: 'Mobile App Development',
+      category: 'Technology',
+      image: 'https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8YXBwfGVufDB8fDB8fHww&auto=format&fit=crop&w=600&q=80',
+      rating: 4.9,
+      ratingCount: 76,
+      price: 450000,
+      location: 'Dar es Salaam',
+      estimatedTime: '4-8 weeks',
+    },
+    {
+      id: '14',
+      title: 'Catering Services for Events',
+      category: 'Food & Catering',
+      image: 'https://images.unsplash.com/photo-1555244162-803834f70033?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Y2F0ZXJpbmd8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=600&q=80',
+      rating: 4.6,
+      ratingCount: 112,
+      price: 250000,
+      location: 'Arusha',
+      estimatedTime: 'Varies by event',
+    },
+    {
+      id: '15',
+      title: 'Interior Design Consultation',
+      category: 'Design & Creative',
+      image: 'https://images.unsplash.com/photo-1558442074-3c19857bc1dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8aW50ZXJpb3IlMjBkZXNpZ258ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=600&q=80',
+      rating: 4.7,
+      ratingCount: 95,
+      price: 200000,
+      location: 'Dodoma',
+      estimatedTime: '3-5 hours',
+      isPremium: true,
+    },
+    {
+      id: '16',
+      title: 'Corporate Event Planning',
+      category: 'Business',
+      image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8ZXZlbnQlMjBwbGFubmluZ3xlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=600&q=80',
+      rating: 4.8,
+      ratingCount: 67,
+      price: 350000,
+      location: 'Dar es Salaam',
+      estimatedTime: 'Varies by event',
+    },
+    {
+      id: '17',
+      title: 'Language Tutoring (English, French)',
+      category: 'Education',
+      image: 'https://images.unsplash.com/photo-1498354178607-a79df2916198?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGxhbmd1YWdlfGVufDB8fDB8fHww&auto=format&fit=crop&w=600&q=80',
+      rating: 4.9,
+      ratingCount: 53,
+      price: 25000,
+      location: 'Online',
+      estimatedTime: '1 hour',
+    },
+    {
+      id: '18',
+      title: 'Residential Electrical Services',
+      category: 'Home Repair',
+      image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZWxlY3RyaWNhbHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=600&q=80',
+      rating: 4.7,
+      ratingCount: 128,
+      price: 65000,
+      location: 'Mbeya',
+      estimatedTime: '1-4 hours',
+    },
   ];
   
   // Filter and sort services
@@ -177,7 +286,7 @@ const Services: React.FC = () => {
   return (
     <Layout>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold">Services</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Service Marketplace</h1>
       </div>
       
       <div className="mb-6">
@@ -246,6 +355,26 @@ const Services: React.FC = () => {
         </div>
       </div>
       
+      {/* Featured services section */}
+      {activeCategory === 'all' && !searchQuery && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Featured Services</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allServices
+              .filter(service => service.isPremium)
+              .slice(0, 3)
+              .map(service => (
+                <ServiceCard
+                  key={service.id}
+                  {...service}
+                  isPremium={true}
+                  className="animate-fade-in"
+                />
+              ))}
+          </div>
+        </div>
+      )}
+      
       {showFilters && (
         <div className="mb-6 p-4 bg-white border border-border rounded-xl">
           <h3 className="font-medium mb-3">Filter Results</h3>
@@ -260,6 +389,8 @@ const Services: React.FC = () => {
                 <option>Dodoma</option>
                 <option>Mwanza</option>
                 <option>Mbeya</option>
+                <option>Zanzibar</option>
+                <option>Online</option>
               </select>
             </div>
             
