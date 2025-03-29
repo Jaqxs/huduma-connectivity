@@ -209,6 +209,83 @@ export function useWallet() {
     }
   };
   
+  const downloadStatement = async () => {
+    if (!user) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please sign in to download your statement',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Fetch all transactions for statement generation
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        toast({
+          title: 'No transactions',
+          description: 'There are no transactions to include in your statement',
+        });
+        return false;
+      }
+      
+      // Format data for CSV
+      const headers = ['Date', 'Type', 'Description', 'Amount (TZS)', 'Status', 'Reference'];
+      const csvRows = [headers.join(',')];
+      
+      data.forEach((tx: any) => {
+        const formattedDate = new Date(tx.created_at).toLocaleDateString();
+        const type = tx.type.charAt(0).toUpperCase() + tx.type.slice(1);
+        const description = tx.description ? `"${tx.description.replace(/"/g, '""')}"` : '';
+        const amount = tx.type === 'deposit' || tx.type === 'refund' ? tx.amount : -tx.amount;
+        const status = tx.status.charAt(0).toUpperCase() + tx.status.slice(1);
+        const reference = tx.reference || tx.id.substring(0, 8);
+        
+        csvRows.push([formattedDate, type, description, amount, status, reference].join(','));
+      });
+      
+      const csvContent = csvRows.join('\n');
+      
+      // Create a blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `huduma_wallet_statement_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: 'Statement downloaded',
+        description: 'Your wallet statement has been downloaded successfully',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error downloading statement:', error);
+      toast({
+        title: 'Download failed',
+        description: error instanceof Error ? error.message : 'Please try again later',
+        variant: 'destructive',
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return {
     isLoading,
     transactions,
@@ -216,5 +293,6 @@ export function useWallet() {
     fetchTransactions,
     addMoney,
     withdrawMoney,
+    downloadStatement,
   };
 }
