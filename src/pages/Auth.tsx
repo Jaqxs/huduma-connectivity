@@ -25,13 +25,19 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const authFormSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  fullName: z.string().min(2, 'Full name must be at least 2 characters').optional(),
+  email: z.string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z.string()
+    .min(6, 'Password must be at least 6 characters'),
+  fullName: z.string()
+    .min(2, 'Full name must be at least 2 characters')
+    .optional()
+    .or(z.literal('')),
 });
 
 type AuthFormValues = z.infer<typeof authFormSchema>;
@@ -41,6 +47,7 @@ const Auth: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn, signUp, user, isInitialized } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -52,6 +59,7 @@ const Auth: React.FC = () => {
       password: '',
       fullName: '',
     },
+    mode: 'onBlur',
   });
   
   useEffect(() => {
@@ -68,12 +76,17 @@ const Auth: React.FC = () => {
     try {
       if (isSignUp) {
         const { error } = await signUp(data.email, data.password, { 
-          full_name: data.fullName 
+          full_name: data.fullName || undefined
         });
         
         if (error) {
-          setFormError(error.message || 'Failed to create account');
-          console.error('Signup error:', error);
+          console.error('Signup error details:', error);
+          
+          if (error.message?.includes('already registered')) {
+            setFormError('This email is already registered. Please sign in instead.');
+          } else {
+            setFormError(error.message || 'Failed to create account');
+          }
         } else {
           setFormSuccess('Account created successfully! Please check your email for verification.');
           // Reset form after successful signup
@@ -87,6 +100,8 @@ const Auth: React.FC = () => {
         const { error } = await signIn(data.email, data.password);
         
         if (error) {
+          console.error('Signin error details:', error);
+          
           if (error.message?.includes('Invalid login credentials')) {
             setFormError('Invalid email or password. Please try again.');
           } else if (error.message?.includes('Email not confirmed')) {
@@ -94,9 +109,9 @@ const Auth: React.FC = () => {
           } else {
             setFormError(error.message || 'Failed to sign in');
           }
-          console.error('Signin error:', error);
         } else {
           // Will auto-redirect due to the useEffect
+          console.log('Sign in successful');
         }
       }
     } catch (error: any) {
@@ -117,6 +132,10 @@ const Auth: React.FC = () => {
     setFormError(null);
     setFormSuccess(null);
     form.reset();
+  };
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
   
   return (
@@ -216,12 +235,23 @@ const Auth: React.FC = () => {
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                           <Input 
-                            type="password" 
+                            type={showPassword ? "text" : "password"} 
                             placeholder="••••••••" 
                             {...field} 
-                            className="pl-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50 transition-all" 
+                            className="pl-10 pr-10 border-huduma-neutral/20 focus-visible:ring-huduma-green focus-visible:border-huduma-green/50 transition-all" 
                             autoComplete={isSignUp ? "new-password" : "current-password"}
                           />
+                          <button 
+                            type="button"
+                            onClick={togglePasswordVisibility}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
                         </div>
                       </FormControl>
                       <FormMessage />
