@@ -107,10 +107,16 @@ const Auth: React.FC = () => {
           setFormSuccess('Account created successfully! Please check your email for verification.');
           // Reset form after successful signup
           form.reset({
-            email: '',
+            email: data.email, // Keep the email for easier login
             password: '',
             fullName: '',
           });
+          
+          // Automatically switch to login mode after successful signup
+          setTimeout(() => {
+            setIsSignUp(false);
+            setFormSuccess('Account created! You can now sign in with your credentials.');
+          }, 1500);
         }
       } else {
         const { error } = await signIn(data.email, data.password);
