@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { 
   Card, 
@@ -28,6 +28,7 @@ import * as z from 'zod';
 import { Loader2, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+// Enhanced validation schema
 const authFormSchema = z.object({
   email: z.string()
     .min(1, 'Email is required')
@@ -51,6 +52,7 @@ const Auth: React.FC = () => {
   const { signIn, signUp, user, isInitialized } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authFormSchema),
@@ -59,14 +61,26 @@ const Auth: React.FC = () => {
       password: '',
       fullName: '',
     },
-    mode: 'onBlur',
+    mode: 'onChange', // Validate on change for better UX
   });
+  
+  // Extract return URL from location state
+  const from = location.state?.from || '/';
+  
+  useEffect(() => {
+    // Clear form messages when switching between signup and signin
+    if (formError || formSuccess) {
+      setFormError(null);
+      setFormSuccess(null);
+    }
+  }, [isSignUp]);
   
   useEffect(() => {
     if (user && isInitialized) {
-      navigate('/');
+      console.log('User is authenticated, navigating to:', from);
+      navigate(from);
     }
-  }, [user, navigate, isInitialized]);
+  }, [user, navigate, isInitialized, from]);
   
   const onSubmit = async (data: AuthFormValues) => {
     setIsLoading(true);
@@ -74,6 +88,8 @@ const Auth: React.FC = () => {
     setFormSuccess(null);
     
     try {
+      console.log(`Attempting to ${isSignUp ? 'sign up' : 'sign in'} with email:`, data.email);
+      
       if (isSignUp) {
         const { error } = await signUp(data.email, data.password, { 
           full_name: data.fullName || undefined
@@ -111,7 +127,7 @@ const Auth: React.FC = () => {
           }
         } else {
           // Will auto-redirect due to the useEffect
-          console.log('Sign in successful');
+          console.log('Sign in successful, waiting for redirect');
         }
       }
     } catch (error: any) {

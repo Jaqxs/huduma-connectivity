@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Set up auth state listener FIRST to avoid missing auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, currentSession: Session | null) => {
+      (event: AuthChangeEvent, currentSession: Session | null) => {
         console.log('Auth state changed:', event);
         
         if (!mounted) return;
@@ -83,10 +83,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // THEN check for existing session
     const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          throw error;
+        }
         
         if (!mounted) return;
         
+        console.log('Initial session check:', currentSession ? 'Session found' : 'No session');
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -114,15 +120,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        throw error;
+      }
       
       if (data) {
+        console.log('Profile found:', data);
         setProfile(data as UserProfile);
       } else {
         console.log('No profile found for user', userId);
@@ -135,26 +146,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             is_verified: false
           }]);
           
-        if (createError) throw createError;
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          throw createError;
+        }
         
         // Fetch the newly created profile
         const { data: newProfile, error: fetchError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .single();
+          .maybeSingle();
         
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.error('Error fetching new profile:', fetchError);
+          throw fetchError;
+        }
           
+        console.log('New profile created:', newProfile);
         setProfile(newProfile as UserProfile);
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Error in fetchUserProfile:', error);
     }
   };
 
   const fetchUserSubscription = async (userId: string) => {
     try {
+      console.log('Fetching subscription for user:', userId);
       const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
@@ -165,10 +184,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
       
       if (error && error.code !== 'PGRST116') { // Ignore "No rows returned" error
+        console.error('Error fetching subscription:', error);
         throw error;
       }
       
       if (!data) {
+        console.log('No subscription found, creating default free subscription');
         // Create a default free subscription if none exists
         const { data: newSub, error: createError } = await supabase
           .from('subscriptions')
@@ -180,14 +201,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .select()
           .single();
           
-        if (createError) throw createError;
+        if (createError) {
+          console.error('Error creating subscription:', createError);
+          throw createError;
+        }
         
+        console.log('New subscription created:', newSub);
         setSubscription(newSub as Subscription);
       } else {
+        console.log('Subscription found:', data);
         setSubscription(data as Subscription);
       }
     } catch (error) {
-      console.error('Error fetching user subscription:', error);
+      console.error('Error in fetchUserSubscription:', error);
       setSubscription(null);
     }
   };
@@ -195,6 +221,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, metadata?: { full_name?: string }) => {
     try {
       setIsLoading(true);
+      console.log('Signing up user with email:', email);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -204,16 +232,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
       
-      if (!error) {
+      if (error) {
+        console.error('Signup error:', error);
         toast({
-          title: "Account created successfully",
-          description: "Please check your email for verification.",
+          title: "Sign up failed",
+          description: error.message,
+          variant: "destructive",
         });
+        return { error };
       }
       
-      return { error };
-    } catch (error) {
-      console.error('Error signing up:', error);
+      console.log('Signup successful:', data);
+      toast({
+        title: "Account created successfully",
+        description: "Please check your email for verification.",
+      });
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error('Error in signUp function:', error);
+      toast({
+        title: "Sign up failed",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
       return { error };
     } finally {
       setIsLoading(false);
@@ -228,6 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: { message: "Email and password are required" } };
       }
       
+      console.log('Signing in user with email:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -252,7 +295,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       return { error: null };
     } catch (error: any) {
-      console.error('Error signing in:', error);
+      console.error('Error in signIn function:', error);
       toast({
         title: "Sign in failed",
         description: error.message || "An unexpected error occurred",
@@ -267,9 +310,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setIsLoading(true);
+      console.log('Signing out user');
       const { error } = await supabase.auth.signOut();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Sign out error:', error);
+        throw error;
+      }
       
       toast({
         title: "Signed out successfully",
