@@ -33,6 +33,7 @@ const ProfileSetup = () => {
   const { userMode } = useUserContext();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -49,12 +50,11 @@ const ProfileSetup = () => {
   });
 
   useEffect(() => {
-    if (user && profile) {
-      // If the profile is already populated with required fields, redirect to profile page
+    if (user && profile && initialLoad) {
+      setInitialLoad(false);
       if (profile.full_name && profile.phone && profile.location) {
         navigate('/profile');
       } else {
-        // Otherwise update form with any existing profile data
         form.reset({
           full_name: profile.full_name || '',
           phone: profile.phone || '',
@@ -66,7 +66,7 @@ const ProfileSetup = () => {
         });
       }
     }
-  }, [user, profile, navigate, form]);
+  }, [user, profile, navigate, form, initialLoad]);
 
   useEffect(() => {
     if (user) {
@@ -100,16 +100,11 @@ const ProfileSetup = () => {
         profession: userMode === 'professional' ? data.profession : null,
       };
 
-      const { error } = await updateProfile(updates);
+      const { error } = await updateProfile(updates, true);
 
       if (error) {
         throw error;
       }
-
-      toast({
-        title: 'Profile updated successfully',
-        description: 'Your profile information has been saved',
-      });
 
       navigate('/profile');
     } catch (error) {

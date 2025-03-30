@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext } from 'react';
 import { 
   User, 
@@ -351,11 +350,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) throw error;
       
-      await refreshProfile();
+      // After updating, refresh the profile data
+      await fetchUserProfile(user.id);
       
+      // Show a success notification if requested
       if (showNotification) {
         toast({
           title: "Profile updated successfully",
+          description: "Your profile has been updated.",
         });
       }
       

@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
@@ -19,7 +19,7 @@ import NotFound from "./pages/NotFound";
 import { UserProvider } from "./context/UserContext";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 // Create a new QueryClient with better configuration for toast messages
 const queryClient = new QueryClient({
@@ -38,18 +38,8 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  const [initialized, setInitialized] = useState(false);
-
-  useEffect(() => {
-    // Mark the app as initialized after a short delay
-    // This prevents duplicate toasts on initial load
-    const timer = setTimeout(() => {
-      setInitialized(true);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
+  // Removed the initialized state as it was causing issues
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -95,13 +85,9 @@ const App = () => {
               </Routes>
             </BrowserRouter>
             
-            {/* Only render toasters once app is initialized to prevent duplicate messages */}
-            {initialized && (
-              <>
-                <Toaster />
-                <Sonner />
-              </>
-            )}
+            {/* Always render both toasters but with fixed configuration */}
+            <Toaster />
+            <Sonner position="top-right" closeButton richColors />
           </UserProvider>
         </AuthProvider>
       </TooltipProvider>
