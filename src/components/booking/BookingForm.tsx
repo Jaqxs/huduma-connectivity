@@ -81,10 +81,18 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Get the service price (in a real app, fetch this from the database)
-      // For now we'll use a default price
-      const servicePrice = 35000;
+      // Get the service price
+      const { data: serviceData, error: serviceError } = await supabase
+        .from('services')
+        .select('price')
+        .eq('id', selectedServiceId)
+        .single();
       
+      if (serviceError) throw serviceError;
+      
+      const servicePrice = serviceData?.price || 35000;
+      
+      // Create the appointment in the database
       const { data, error } = await supabase
         .from('appointments')
         .insert([
