@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Calendar, Clock, MapPin, User, Phone, FileText, CheckCircle, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
@@ -69,13 +68,15 @@ const Appointments: React.FC = () => {
     setLoading(true);
     
     try {
-      // Fetch appointments from the database
+      // Fetch appointments from the database - with specific column references
+      // to avoid the ambiguity between professional_id and customer_id
       const { data, error } = await supabase
         .from('appointments')
         .select(`
           *,
-          professional:professional_id (id, full_name, avatar_url, phone),
-          customer:customer_id (id, full_name, avatar_url, phone)
+          professional:profiles!professional_id(id, full_name, avatar_url, phone),
+          customer:profiles!customer_id(id, full_name, avatar_url, phone),
+          service:services(id, title)
         `)
         .or(`professional_id.eq.${user.id},customer_id.eq.${user.id}`)
         .order('appointment_date', { ascending: true });
@@ -119,7 +120,10 @@ const Appointments: React.FC = () => {
               image: appointment.customer.avatar_url || 'https://randomuser.me/api/portraits/women/33.jpg',
               phone: appointment.customer.phone || '+255 756 789 012',
             } : undefined,
-            service: {
+            service: appointment.service ? {
+              id: appointment.service.id,
+              title: appointment.service.title || 'Service'
+            } : {
               id: appointment.service_id,
               title: 'Service Title' // In a real app, you would fetch the service title
             },
@@ -288,7 +292,6 @@ const Appointments: React.FC = () => {
     ];
   };
   
-  // Function to render appointments based on active tab
   const renderAppointments = () => {
     if (loading) {
       return (
@@ -321,14 +324,12 @@ const Appointments: React.FC = () => {
     return (
       <div className="space-y-4">
         {currentAppointments.map((appointment) => {
-          // Determine which person to show based on user mode
           const person = userMode === 'customer' 
             ? appointment.professional 
             : appointment.customer;
           
           if (!person) return null;
           
-          // Format date and price
           const formattedDate = new Date(appointment.appointment_date).toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
@@ -336,7 +337,6 @@ const Appointments: React.FC = () => {
           });
           const formattedPrice = new Intl.NumberFormat('en-US').format(appointment.price);
           
-          // Status indicator
           let statusColor = 'bg-blue-500';
           let statusIcon = <Clock size={16} />;
           
