@@ -6,6 +6,7 @@ import CategoryPill from '@/components/ui/CategoryPill';
 import ServiceCard from '@/components/ui/ServiceCard';
 import { cn } from '@/lib/utils';
 import { useUserContext } from '@/context/UserContext';
+import { allServices } from '@/data/serviceData';
 
 interface FeaturedServicesProps {
   className?: string;
@@ -27,80 +28,12 @@ const FeaturedServices: React.FC<FeaturedServicesProps> = ({ className }) => {
     { id: 'education', label: 'Education', icon: <BookOpen size={16} /> },
   ];
   
-  // Sample services data
-  const services = [
-    {
-      id: '1',
-      title: 'Home Plumbing Services & Repairs',
-      category: 'Plumbing',
-      image: 'https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTB8fHBsdW1iaW5nfGVufDB8fHx8MTY5MDQwMDcwMnww&ixlib=rb-4.0.3&w=600&q=80',
-      rating: 4.8,
-      ratingCount: 156,
-      price: 35000,
-      location: 'Dar es Salaam',
-      estimatedTime: '1-2 hours',
-    },
-    {
-      id: '2',
-      title: 'Professional Haircut & Styling',
-      category: 'Beauty & Hair',
-      image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?ixid=M3wxMjA3fDB8MXxzZWFyY2h8M3x8aGFpcmN1dHxlbnwwfHx8fDE2OTA0MDA3NzR8MA&ixlib=rb-4.0.3&w=600&q=80',
-      rating: 4.9,
-      ratingCount: 213,
-      price: 25000,
-      location: 'Arusha',
-      estimatedTime: '45 mins',
-    },
-    {
-      id: '3',
-      title: 'Business Plan Development',
-      category: 'Business',
-      image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTl8fGJ1c2luZXNzJTIwcGxhbnxlbnwwfHx8fDE2OTA0MDA4NTZ8MA&ixlib=rb-4.0.3&w=600&q=80',
-      rating: 4.7,
-      ratingCount: 89,
-      price: 150000,
-      location: 'Dodoma',
-      estimatedTime: '3-5 days',
-    },
-    {
-      id: '4',
-      title: 'Deep Home Cleaning Service',
-      category: 'Cleaning',
-      image: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?ixid=M3wxMjA3fDB8MXxzZWFyY2h8Nnx8Y2xlYW5pbmd8ZW58MHx8fHwxNjkwNDAwOTE2fDA&ixlib=rb-4.0.3&w=600&q=80',
-      rating: 4.6,
-      ratingCount: 132,
-      price: 45000,
-      location: 'Mwanza',
-      estimatedTime: '3-4 hours',
-    },
-    {
-      id: '5',
-      title: 'Car Maintenance & Repair',
-      category: 'Automotive',
-      image: 'https://images.unsplash.com/photo-1599038064230-17400f8f268f?ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTB8fGNhciUyMG1lY2hhbmljfGVufDB8fHx8MTY5MDQwMDk3MHww&ixlib=rb-4.0.3&w=600&q=80',
-      rating: 4.5,
-      ratingCount: 78,
-      price: 80000,
-      location: 'Dar es Salaam',
-      estimatedTime: '1-3 hours',
-    },
-    {
-      id: '6',
-      title: 'Private Math Tutoring',
-      category: 'Education',
-      image: 'https://images.unsplash.com/photo-1613312328068-c9b6c0444507?ixid=M3wxMjA3fDB8MXxzZWFyY2h8Mnx8dHV0b3Jpbmd8ZW58MHx8fHwxNjkwNDAxMDI5fDA&ixlib=rb-4.0.3&w=600&q=80',
-      rating: 5.0,
-      ratingCount: 42,
-      price: 30000,
-      location: 'Mbeya',
-      estimatedTime: '1 hour',
-    },
-  ];
-  
   // Filter services based on active category
   const filteredServices = activeCategory === 'all' 
-    ? services 
-    : services.filter(service => service.category.toLowerCase().replace(/[^a-z0-9]/g, '') === activeCategory);
+    ? allServices.slice(0, 6) // Only show first 6 services on home page
+    : allServices.filter(
+        service => service.category.toLowerCase().replace(/[^a-z0-9]/g, '') === activeCategory
+      ).slice(0, 6);
   
   return (
     <section className={cn("py-8", className)}>

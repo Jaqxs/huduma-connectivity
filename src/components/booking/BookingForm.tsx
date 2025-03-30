@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,11 +21,12 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface BookingFormProps {
   professionalId: string;
   serviceId?: string; 
-  services?: { id: string; title: string }[];
+  services?: { id: string; title: string; price?: number }[];
   professionalName: string;
   trigger?: React.ReactNode;
   onSuccess?: () => void;
@@ -52,20 +53,22 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showAuthAlert, setShowAuthAlert] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Reset selected service if serviceId prop changes
+  useEffect(() => {
+    if (serviceId) {
+      setSelectedServiceId(serviceId);
+    }
+  }, [serviceId]);
+
   const handleBookAppointment = async () => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to book an appointment",
-        variant: "destructive"
-      });
-      setOpen(false);
-      navigate('/auth');
+      setShowAuthAlert(true);
       return;
     }
 
@@ -103,7 +106,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
             appointment_date: format(date, 'yyyy-MM-dd'),
             appointment_time: timeSlot,
             status: 'pending',
-            price: servicePrice
+            price: servicePrice,
+            notes: notes
           }
         ])
         .select();
@@ -145,158 +149,186 @@ const BookingForm: React.FC<BookingFormProps> = ({
       Book Now
     </Button>
   );
+
+  const handleAuthRedirect = () => {
+    setShowAuthAlert(false);
+    setOpen(false);
+    navigate('/auth');
+  };
   
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || defaultTrigger}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Book Appointment with {professionalName}</DialogTitle>
-        </DialogHeader>
-        
-        {isSuccess ? (
-          <div className="py-8 text-center">
-            <div className="mb-4 flex justify-center">
-              <div className="w-16 h-16 bg-huduma-light-green rounded-full flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-huduma-green" />
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          {trigger || defaultTrigger}
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Book Appointment with {professionalName}</DialogTitle>
+          </DialogHeader>
+          
+          {isSuccess ? (
+            <div className="py-8 text-center">
+              <div className="mb-4 flex justify-center">
+                <div className="w-16 h-16 bg-huduma-light-green rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-8 w-8 text-huduma-green" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Booking Confirmed!</h3>
+              <p className="text-muted-foreground">
+                Your appointment has been successfully scheduled.
+              </p>
+            </div>
+          ) : (
+            <div className="py-4 space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Service</label>
+                <Select
+                  value={selectedServiceId}
+                  onValueChange={setSelectedServiceId}
+                  disabled={Boolean(serviceId) || isSubmitting}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {services.map((service) => (
+                      <SelectItem key={service.id} value={service.id}>
+                        {service.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                      )}
+                      disabled={isSubmitting}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP") : "Select a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      disabled={(date) => 
+                        date < new Date(new Date().setHours(0, 0, 0, 0)) || 
+                        date > new Date(new Date().setMonth(new Date().getMonth() + 2))
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Time</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !timeSlot && "text-muted-foreground"
+                      )}
+                      disabled={isSubmitting}
+                    >
+                      <Clock className="mr-2 h-4 w-4" />
+                      {timeSlot || "Select a time"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <div className="grid grid-cols-3 gap-2 p-2 max-h-[300px] overflow-y-auto">
+                      {availableTimeSlots.map((time) => (
+                        <Button
+                          key={time}
+                          variant="outline"
+                          className={cn(
+                            "justify-center",
+                            timeSlot === time && "bg-huduma-light-green text-huduma-green"
+                          )}
+                          onClick={() => setTimeSlot(time)}
+                        >
+                          {time}
+                        </Button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Additional Notes</label>
+                <Textarea 
+                  placeholder="Describe what you need help with..." 
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="resize-none"
+                  disabled={isSubmitting}
+                />
               </div>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Booking Confirmed!</h3>
-            <p className="text-muted-foreground">
-              Your appointment has been successfully scheduled.
-            </p>
-          </div>
-        ) : (
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Service</label>
-              <Select
-                value={selectedServiceId}
-                onValueChange={setSelectedServiceId}
-                disabled={Boolean(serviceId) || isSubmitting}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a service" />
-                </SelectTrigger>
-                <SelectContent>
-                  {services.map((service) => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Date</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
-                    disabled={isSubmitting}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : "Select a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    disabled={(date) => 
-                      date < new Date(new Date().setHours(0, 0, 0, 0)) || 
-                      date > new Date(new Date().setMonth(new Date().getMonth() + 2))
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Time</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !timeSlot && "text-muted-foreground"
-                    )}
-                    disabled={isSubmitting}
-                  >
-                    <Clock className="mr-2 h-4 w-4" />
-                    {timeSlot || "Select a time"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <div className="grid grid-cols-3 gap-2 p-2 max-h-[300px] overflow-y-auto">
-                    {availableTimeSlots.map((time) => (
-                      <Button
-                        key={time}
-                        variant="outline"
-                        className={cn(
-                          "justify-center",
-                          timeSlot === time && "bg-huduma-light-green text-huduma-green"
-                        )}
-                        onClick={() => setTimeSlot(time)}
-                      >
-                        {time}
-                      </Button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Additional Notes</label>
-              <Textarea 
-                placeholder="Describe what you need help with..." 
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="resize-none"
-                disabled={isSubmitting}
-              />
-            </div>
-          </div>
-        )}
-        
-        <DialogFooter>
-          {!isSuccess && (
-            <>
-              <DialogClose asChild>
-                <Button variant="outline" disabled={isSubmitting}>
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button 
-                onClick={handleBookAppointment} 
-                className="bg-gradient-to-r from-huduma-green to-huduma-teal hover:shadow-glow"
-                disabled={isSubmitting || !date || !timeSlot || !selectedServiceId}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Confirm Booking'
-                )}
-              </Button>
-            </>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          
+          <DialogFooter>
+            {!isSuccess && (
+              <>
+                <DialogClose asChild>
+                  <Button variant="outline" disabled={isSubmitting}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button 
+                  onClick={handleBookAppointment} 
+                  className="bg-gradient-to-r from-huduma-green to-huduma-teal hover:shadow-glow"
+                  disabled={isSubmitting || !date || !timeSlot || !selectedServiceId}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Confirm Booking'
+                  )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Authentication Alert Dialog */}
+      <AlertDialog open={showAuthAlert} onOpenChange={setShowAuthAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Authentication Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              You need to sign in or create an account to book an appointment.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowAuthAlert(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleAuthRedirect}>
+              Sign In
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
