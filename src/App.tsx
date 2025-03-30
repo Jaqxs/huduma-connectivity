@@ -12,6 +12,7 @@ import ProfessionalDetail from "./pages/ProfessionalDetail";
 import Appointments from "./pages/Appointments";
 import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
+import ProfileSetup from "./pages/ProfileSetup";
 import Monetization from "./pages/Monetization";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -49,6 +50,11 @@ const App = () => (
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile-setup" element={
+                <ProtectedRoute>
+                  <ProfileSetup />
                 </ProtectedRoute>
               } />
               <Route path="/premium" element={

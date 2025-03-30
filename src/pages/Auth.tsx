@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -28,7 +27,6 @@ import * as z from 'zod';
 import { Loader2, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Enhanced validation schema
 const authFormSchema = z.object({
   email: z.string()
     .min(1, 'Email is required')
@@ -64,11 +62,9 @@ const Auth: React.FC = () => {
     mode: 'onChange', // Validate on change for better UX
   });
   
-  // Extract return URL from location state
   const from = location.state?.from || '/';
   
   useEffect(() => {
-    // Clear form messages when switching between signup and signin
     if (formError || formSuccess) {
       setFormError(null);
       setFormSuccess(null);
@@ -91,7 +87,7 @@ const Auth: React.FC = () => {
       console.log(`Attempting to ${isSignUp ? 'sign up' : 'sign in'} with email:`, data.email);
       
       if (isSignUp) {
-        const { error } = await signUp(data.email, data.password, { 
+        const { error, isNewUser } = await signUp(data.email, data.password, { 
           full_name: data.fullName || undefined
         });
         
@@ -105,18 +101,23 @@ const Auth: React.FC = () => {
           }
         } else {
           setFormSuccess('Account created successfully! Please check your email for verification.');
-          // Reset form after successful signup
-          form.reset({
-            email: data.email, // Keep the email for easier login
-            password: '',
-            fullName: '',
-          });
           
-          // Automatically switch to login mode after successful signup
-          setTimeout(() => {
-            setIsSignUp(false);
-            setFormSuccess('Account created! You can now sign in with your credentials.');
-          }, 1500);
+          if (isNewUser) {
+            setTimeout(() => {
+              navigate('/profile-setup');
+            }, 1500);
+          } else {
+            form.reset({
+              email: data.email,
+              password: '',
+              fullName: '',
+            });
+            
+            setTimeout(() => {
+              setIsSignUp(false);
+              setFormSuccess('Account created! You can now sign in with your credentials.');
+            }, 1500);
+          }
         }
       } else {
         const { error } = await signIn(data.email, data.password);
@@ -132,7 +133,6 @@ const Auth: React.FC = () => {
             setFormError(error.message || 'Failed to sign in');
           }
         } else {
-          // Will auto-redirect due to the useEffect
           console.log('Sign in successful, waiting for redirect');
         }
       }

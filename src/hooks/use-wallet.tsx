@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -26,6 +26,12 @@ export function useWallet() {
   const [balance, setBalance] = useState(0);
   const { user, session } = useAuth();
   const { toast } = useToast();
+  
+  useEffect(() => {
+    if (user) {
+      fetchTransactions();
+    }
+  }, [user]);
   
   const fetchTransactions = async () => {
     if (!user) return;
@@ -67,6 +73,46 @@ export function useWallet() {
       setIsLoading(false);
     }
   };
+
+  // Mock function for processing payment (in a real app, this would be handled by a payment gateway)
+  const processPayment = async (params: {
+    amount: number;
+    type: 'deposit' | 'withdrawal';
+    method: string;
+    description: string;
+  }) => {
+    if (!user || !session) {
+      throw new Error('Authentication required');
+    }
+    
+    // In a real application, this would call your payment processing API
+    // For this demo, we'll simulate the process by directly inserting a transaction
+    
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert([
+          {
+            user_id: user.id,
+            type: params.type,
+            amount: params.amount,
+            method: params.method,
+            status: 'completed', // Auto-complete for demo purposes
+            description: params.description,
+            reference: `REF-${Date.now().toString(36)}`
+          }
+        ])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      throw error;
+    }
+  };
   
   const addMoney = async (amount: number, method: string) => {
     if (!user || !session) {
@@ -90,27 +136,13 @@ export function useWallet() {
     setIsLoading(true);
     
     try {
-      // In a real app, this would go through a payment gateway
-      // For this demo, we'll use our edge function
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/process-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          amount,
-          type: 'deposit',
-          method,
-          description: `Deposit ${amount} TZS via ${method}`,
-        }),
+      // Process the payment using the mock function
+      await processPayment({
+        amount,
+        type: 'deposit',
+        method,
+        description: `Deposit ${amount} TZS via ${method}`,
       });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to process payment');
-      }
       
       toast({
         title: 'Deposit successful',
@@ -165,30 +197,16 @@ export function useWallet() {
     setIsLoading(true);
     
     try {
-      // In a real app, this would go through a payment gateway
-      // For this demo, we'll use our edge function
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/process-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          amount,
-          type: 'withdrawal',
-          method,
-          description: `Withdrawal ${amount} TZS via ${method}`,
-        }),
+      // Process the withdrawal using the mock function
+      await processPayment({
+        amount,
+        type: 'withdrawal',
+        method,
+        description: `Withdrawal ${amount} TZS via ${method}`,
       });
       
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to process withdrawal');
-      }
-      
       toast({
-        title: 'Withdrawal initiated',
+        title: 'Withdrawal successful',
         description: `${amount.toLocaleString()} TZS will be sent to your ${method} account`,
       });
       

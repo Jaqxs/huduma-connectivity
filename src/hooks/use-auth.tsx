@@ -34,7 +34,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isInitialized: boolean;
-  signUp: (email: string, password: string, metadata?: { full_name?: string }) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, metadata?: { full_name?: string }) => Promise<{ error: any, isNewUser?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -248,7 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "Please check your email for verification.",
       });
       
-      return { error: null };
+      return { error: null, isNewUser: true };
     } catch (error: any) {
       console.error('Error in signUp function:', error);
       toast({
