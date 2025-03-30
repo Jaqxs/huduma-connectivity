@@ -38,7 +38,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<{ error: any }>;
+  updateProfile: (updates: Partial<UserProfile>, showNotification?: boolean) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -340,7 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateProfile = async (updates: Partial<UserProfile>) => {
+  const updateProfile = async (updates: Partial<UserProfile>, showNotification = true) => {
     try {
       if (!user) throw new Error('User not authenticated');
       
@@ -353,18 +353,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       await refreshProfile();
       
-      toast({
-        title: "Profile updated successfully",
-      });
+      if (showNotification) {
+        toast({
+          title: "Profile updated successfully",
+        });
+      }
       
       return { error: null };
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast({
-        title: "Error updating profile",
-        description: error instanceof Error ? error.message : "Please try again",
-        variant: "destructive",
-      });
+      
+      if (showNotification) {
+        toast({
+          title: "Error updating profile",
+          description: error instanceof Error ? error.message : "Please try again",
+          variant: "destructive",
+        });
+      }
+      
       return { error };
     }
   };

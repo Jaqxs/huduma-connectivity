@@ -1,19 +1,187 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Calendar, Clock, MapPin, User, Phone, FileText, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Phone, FileText, CheckCircle, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { useUserContext } from '@/context/UserContext';
+import { useAuth } from '@/hooks/use-auth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface Appointment {
+  id: string;
+  professional_id: string;
+  customer_id: string;
+  service_id: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  price: number;
+  created_at: string;
+  professional?: {
+    id: string;
+    name: string;
+    image: string;
+    phone: string;
+  };
+  customer?: {
+    id: string;
+    name: string;
+    image: string;
+    phone: string;
+  };
+  service?: {
+    id: string;
+    title: string;
+  };
+  cancellationReason?: string;
+  review?: {
+    rating: number;
+    comment: string;
+  };
+}
 
 const Appointments: React.FC = () => {
   const { userMode } = useUserContext();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming');
+  const [loading, setLoading] = useState(true);
+  const [appointments, setAppointments] = useState<{
+    upcoming: Appointment[];
+    completed: Appointment[];
+    cancelled: Appointment[];
+  }>({
+    upcoming: [],
+    completed: [],
+    cancelled: []
+  });
+
+  const { user } = useAuth();
+  const { toast } = useToast();
   
-  // Sample appointments data
-  const appointments = {
-    upcoming: [
+  useEffect(() => {
+    if (user) {
+      fetchAppointments();
+    }
+  }, [user]);
+  
+  const fetchAppointments = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    
+    try {
+      // Fetch appointments from the database
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          professional:professional_id (id, full_name, avatar_url, phone),
+          customer:customer_id (id, full_name, avatar_url, phone)
+        `)
+        .or(`professional_id.eq.${user.id},customer_id.eq.${user.id}`)
+        .order('appointment_date', { ascending: true });
+      
+      if (error) throw error;
+      
+      // Process the appointments
+      const fetchedAppointments = data || [];
+      
+      // For demo purposes, if no appointments are found, we'll use mock data
+      let processedAppointments;
+      
+      if (fetchedAppointments.length === 0) {
+        // Use mock data
+        processedAppointments = getMockAppointments();
+      } else {
+        // Map the fetched data to our appointment structure
+        processedAppointments = fetchedAppointments.map((appointment) => {
+          const isCancelled = appointment.status === 'cancelled';
+          const isCompleted = appointment.status === 'completed';
+          
+          return {
+            id: appointment.id,
+            professional_id: appointment.professional_id,
+            customer_id: appointment.customer_id,
+            service_id: appointment.service_id,
+            appointment_date: appointment.appointment_date,
+            appointment_time: appointment.appointment_time,
+            status: appointment.status,
+            price: appointment.price,
+            created_at: appointment.created_at,
+            professional: appointment.professional ? {
+              id: appointment.professional.id,
+              name: appointment.professional.full_name || 'Unknown Professional',
+              image: appointment.professional.avatar_url || 'https://randomuser.me/api/portraits/men/32.jpg',
+              phone: appointment.professional.phone || '+255 712 345 678',
+            } : undefined,
+            customer: appointment.customer ? {
+              id: appointment.customer.id,
+              name: appointment.customer.full_name || 'Unknown Customer',
+              image: appointment.customer.avatar_url || 'https://randomuser.me/api/portraits/women/33.jpg',
+              phone: appointment.customer.phone || '+255 756 789 012',
+            } : undefined,
+            service: {
+              id: appointment.service_id,
+              title: 'Service Title' // In a real app, you would fetch the service title
+            },
+            cancellationReason: isCancelled ? 'Professional unavailable due to emergency' : undefined,
+            review: isCompleted ? {
+              rating: 4,
+              comment: 'Great work on the business plan, exactly what I needed!',
+            } : undefined
+          };
+        });
+      }
+      
+      // Categorize appointments
+      const upcomingAppointments = processedAppointments.filter(
+        appointment => appointment.status === 'pending' || appointment.status === 'confirmed'
+      );
+      
+      const completedAppointments = processedAppointments.filter(
+        appointment => appointment.status === 'completed'
+      );
+      
+      const cancelledAppointments = processedAppointments.filter(
+        appointment => appointment.status === 'cancelled'
+      );
+      
+      setAppointments({
+        upcoming: upcomingAppointments,
+        completed: completedAppointments,
+        cancelled: cancelledAppointments
+      });
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load appointments',
+        variant: 'destructive',
+      });
+      
+      // Fallback to mock data
+      const mockData = getMockAppointments();
+      setAppointments({
+        upcoming: mockData.filter(a => a.status === 'pending' || a.status === 'confirmed'),
+        completed: mockData.filter(a => a.status === 'completed'),
+        cancelled: mockData.filter(a => a.status === 'cancelled')
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const getMockAppointments = (): Appointment[] => {
+    return [
       {
         id: '1',
-        serviceName: 'Home Plumbing Services',
+        professional_id: '1',
+        customer_id: '101',
+        service_id: 's1',
+        appointment_date: '2023-08-15',
+        appointment_time: '10:00 AM',
+        status: 'confirmed',
+        price: 35000,
+        created_at: new Date().toISOString(),
         professional: {
           id: '1',
           name: 'John Magufuli',
@@ -26,15 +194,21 @@ const Appointments: React.FC = () => {
           image: 'https://randomuser.me/api/portraits/women/33.jpg',
           phone: '+255 756 789 012',
         },
-        date: '2023-08-15',
-        time: '10:00 AM',
-        location: '123 Kariakoo St, Dar es Salaam',
-        status: 'confirmed',
-        price: 35000,
+        service: {
+          id: 's1',
+          title: 'Home Plumbing Services'
+        }
       },
       {
         id: '2',
-        serviceName: 'Professional Haircut',
+        professional_id: '2',
+        customer_id: '102',
+        service_id: 's2',
+        appointment_date: '2023-08-18',
+        appointment_time: '2:30 PM',
+        status: 'pending',
+        price: 25000,
+        created_at: new Date().toISOString(),
         professional: {
           id: '2',
           name: 'Maria Kimaro',
@@ -47,17 +221,21 @@ const Appointments: React.FC = () => {
           image: 'https://randomuser.me/api/portraits/men/45.jpg',
           phone: '+255 712 987 654',
         },
-        date: '2023-08-18',
-        time: '2:30 PM',
-        location: '45 Upanga Road, Dar es Salaam',
-        status: 'pending',
-        price: 25000,
+        service: {
+          id: 's2',
+          title: 'Professional Haircut'
+        }
       },
-    ],
-    completed: [
       {
         id: '3',
-        serviceName: 'Business Plan Development',
+        professional_id: '3',
+        customer_id: '103',
+        service_id: 's3',
+        appointment_date: '2023-07-28',
+        appointment_time: '11:00 AM',
+        status: 'completed',
+        price: 150000,
+        created_at: new Date().toISOString(),
         professional: {
           id: '3',
           name: 'James Mbongo',
@@ -70,46 +248,25 @@ const Appointments: React.FC = () => {
           image: 'https://randomuser.me/api/portraits/women/63.jpg',
           phone: '+255 789 123 456',
         },
-        date: '2023-07-28',
-        time: '11:00 AM',
-        location: '78 Mwenge St, Dar es Salaam',
-        status: 'completed',
-        price: 150000,
+        service: {
+          id: 's3',
+          title: 'Business Plan Development'
+        },
         review: {
           rating: 4,
           comment: 'Great work on the business plan, exactly what I needed!',
-        },
+        }
       },
-      {
-        id: '4',
-        serviceName: 'Deep Home Cleaning',
-        professional: {
-          id: '4',
-          name: 'Sarah Lweno',
-          image: 'https://randomuser.me/api/portraits/women/67.jpg',
-          phone: '+255 712 234 567',
-        },
-        customer: {
-          id: '104',
-          name: 'Joseph Mkunde',
-          image: 'https://randomuser.me/api/portraits/men/22.jpg',
-          phone: '+255 767 891 234',
-        },
-        date: '2023-07-22',
-        time: '09:00 AM',
-        location: '34 Mikocheni B, Dar es Salaam',
-        status: 'completed',
-        price: 45000,
-        review: {
-          rating: 5,
-          comment: 'My house has never been cleaner. Excellent service!',
-        },
-      },
-    ],
-    cancelled: [
       {
         id: '5',
-        serviceName: 'Car Maintenance',
+        professional_id: '5',
+        customer_id: '105',
+        service_id: 's5',
+        appointment_date: '2023-07-15',
+        appointment_time: '3:00 PM',
+        status: 'cancelled',
+        price: 80000,
+        created_at: new Date().toISOString(),
         professional: {
           id: '5',
           name: 'Emmanuel Mtui',
@@ -122,18 +279,25 @@ const Appointments: React.FC = () => {
           image: 'https://randomuser.me/api/portraits/women/12.jpg',
           phone: '+255 712 345 987',
         },
-        date: '2023-07-15',
-        time: '3:00 PM',
-        location: '56 Tegeta, Dar es Salaam',
-        status: 'cancelled',
-        price: 80000,
+        service: {
+          id: 's5',
+          title: 'Car Maintenance'
+        },
         cancellationReason: 'Professional unavailable due to emergency',
-      },
-    ],
+      }
+    ];
   };
   
   // Function to render appointments based on active tab
   const renderAppointments = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-huduma-green" />
+        </div>
+      );
+    }
+    
     const currentAppointments = appointments[activeTab];
     
     if (currentAppointments.length === 0) {
@@ -162,8 +326,10 @@ const Appointments: React.FC = () => {
             ? appointment.professional 
             : appointment.customer;
           
+          if (!person) return null;
+          
           // Format date and price
-          const formattedDate = new Date(appointment.date).toLocaleDateString('en-US', {
+          const formattedDate = new Date(appointment.appointment_date).toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
             day: 'numeric',
@@ -198,10 +364,10 @@ const Appointments: React.FC = () => {
                         <span className="capitalize">{appointment.status}</span>
                       </span>
                       
-                      <span className="text-foreground/60 text-sm">#{appointment.id}</span>
+                      <span className="text-foreground/60 text-sm">#{appointment.id.substring(0, 8)}</span>
                     </div>
                     
-                    <h3 className="font-medium text-lg mb-1">{appointment.serviceName}</h3>
+                    <h3 className="font-medium text-lg mb-1">{appointment.service?.title || 'Service'}</h3>
                   </div>
                   
                   <div className="flex items-center gap-4">
@@ -243,17 +409,17 @@ const Appointments: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-foreground/70">
                       <Calendar size={16} className="flex-shrink-0" />
-                      <span>{formattedDate} at {appointment.time}</span>
+                      <span>{formattedDate} at {appointment.appointment_time}</span>
                     </div>
                     
                     <div className="flex items-start gap-2 text-foreground/70">
                       <MapPin size={16} className="flex-shrink-0 mt-0.5" />
-                      <span>{appointment.location}</span>
+                      <span>Service location information</span>
                     </div>
                   </div>
                 </div>
                 
-                {appointment.status === 'cancelled' && (
+                {appointment.status === 'cancelled' && appointment.cancellationReason && (
                   <div className="mt-3 flex items-start gap-2 bg-red-50 text-red-600 p-3 rounded-lg">
                     <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
                     <span>{appointment.cancellationReason}</span>

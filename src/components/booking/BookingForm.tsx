@@ -81,6 +81,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setIsSubmitting(true);
     
     try {
+      // Get the service price (in a real app, fetch this from the database)
+      // For now we'll use a default price
+      const servicePrice = 35000;
+      
       const { data, error } = await supabase
         .from('appointments')
         .insert([
@@ -91,7 +95,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             appointment_date: format(date, 'yyyy-MM-dd'),
             appointment_time: timeSlot,
             status: 'pending',
-            price: 0, // This would typically come from the service price
+            price: servicePrice
           }
         ])
         .select();
@@ -128,7 +132,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   };
 
   const defaultTrigger = (
-    <Button className="bg-gradient-to-r from-huduma-green to-huduma-teal hover:shadow-glow transition-all">
+    <Button className="w-full bg-gradient-to-r from-huduma-green to-huduma-teal hover:shadow-glow transition-all">
       <CalendarIcon size={18} className="mr-2" />
       Book Now
     </Button>

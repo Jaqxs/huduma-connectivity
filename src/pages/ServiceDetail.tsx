@@ -1,14 +1,20 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { ArrowLeft, Star, MapPin, Clock, Calendar, CheckCircle, AlertCircle, Banknote, Share2 } from 'lucide-react';
+import BookingForm from '@/components/booking/BookingForm';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const ServiceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [loading, setLoading] = useState(true);
+  const [service, setService] = useState<any>(null);
+  const { toast } = useToast();
   
   // Sample service data (in a real app, fetch based on id)
-  const service = {
+  const mockService = {
     id: '1',
     title: 'Home Plumbing Services & Repairs',
     category: 'Plumbing',
@@ -58,11 +64,72 @@ const ServiceDetail: React.FC = () => {
     ],
   };
   
-  const [selectedImage, setSelectedImage] = React.useState(service.images[0]);
-  const [selectedDate, setSelectedDate] = React.useState('');
-  const [selectedTime, setSelectedTime] = React.useState('');
+  useEffect(() => {
+    // In a real app, we would fetch the service data from the API
+    // For now, we'll just use the mock data
+    setService(mockService);
+    setLoading(false);
+  }, [id]);
+  
+  const [selectedImage, setSelectedImage] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  
+  useEffect(() => {
+    if (service && service.images && service.images.length > 0) {
+      setSelectedImage(service.images[0]);
+    }
+  }, [service]);
+  
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <div className="w-12 h-12 border-4 border-t-huduma-green border-huduma-green/20 rounded-full animate-spin"></div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (!service) {
+    return (
+      <Layout>
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold mb-2">Service Not Found</h2>
+          <p className="mb-4">The service you're looking for doesn't exist or has been removed.</p>
+          <Link 
+            to="/services"
+            className="py-2 px-4 bg-huduma-green text-white rounded-lg hover:bg-huduma-green/90"
+          >
+            Browse Services
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
   
   const formattedPrice = new Intl.NumberFormat('en-US').format(service.price);
+  
+  const handleBooking = () => {
+    if (!selectedDate || !selectedTime) {
+      toast({
+        title: "Selection Required",
+        description: "Please select both a date and time to book",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Booking logic would go here
+    toast({
+      title: "Booking Successful",
+      description: `Your appointment has been scheduled for ${selectedDate} at ${selectedTime}`,
+    });
+    
+    // Reset selections
+    setSelectedDate('');
+    setSelectedTime('');
+  };
   
   return (
     <Layout>
@@ -87,7 +154,7 @@ const ServiceDetail: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              {service.images.map((image, index) => (
+              {service.images.map((image: string, index: number) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(image)}
@@ -141,7 +208,7 @@ const ServiceDetail: React.FC = () => {
           <div>
             <h2 className="text-xl font-bold mb-4">Service Features</h2>
             <ul className="space-y-2">
-              {service.features.map((feature, index) => (
+              {service.features.map((feature: string, index: number) => (
                 <li key={index} className="flex items-center gap-2">
                   <CheckCircle size={18} className="text-huduma-green flex-shrink-0" />
                   <span>{feature}</span>
@@ -231,60 +298,12 @@ const ServiceDetail: React.FC = () => {
                 <div className="text-sm text-foreground/70">Per service ({service.estimatedTime})</div>
               </div>
               
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Select Date</label>
-                  <select 
-                    value={selectedDate} 
-                    onChange={(e) => {
-                      setSelectedDate(e.target.value);
-                      setSelectedTime('');
-                    }}
-                    className="w-full p-2 border border-border rounded-lg"
-                  >
-                    <option value="">Select a date</option>
-                    {service.availableDates.map((dateOption) => (
-                      <option key={dateOption.date} value={dateOption.date}>
-                        {new Date(dateOption.date).toLocaleDateString('en-US', { 
-                          weekday: 'short', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {selectedDate && (
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Select Time</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {service.availableDates
-                        .find(d => d.date === selectedDate)?.slots
-                        .map((slot) => (
-                          <button
-                            key={slot}
-                            onClick={() => setSelectedTime(slot)}
-                            className={`py-2 rounded-lg text-sm transition-colors ${
-                              selectedTime === slot 
-                                ? 'bg-huduma-green text-white' 
-                                : 'bg-huduma-neutral text-foreground hover:bg-huduma-light-green'
-                            }`}
-                          >
-                            {slot}
-                          </button>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <button 
-                disabled={!selectedDate || !selectedTime}
-                className="w-full py-3 bg-huduma-green text-white rounded-xl font-medium transition-colors hover:bg-huduma-green/90 disabled:bg-foreground/20 disabled:text-foreground/40 disabled:cursor-not-allowed"
-              >
-                Book Now
-              </button>
+              <BookingForm
+                professionalId={service.professional.id}
+                serviceId={service.id}
+                services={[{ id: service.id, title: service.title }]}
+                professionalName={service.professional.name}
+              />
               
               <div className="mt-4 text-sm text-foreground/70 flex items-center gap-1">
                 <AlertCircle size={14} />
