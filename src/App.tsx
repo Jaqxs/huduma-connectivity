@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,9 +18,7 @@ import NotFound from "./pages/NotFound";
 import { UserProvider } from "./context/UserContext";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { useState } from "react";
 
-// Create a new QueryClient with better configuration for toast messages
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -29,17 +26,13 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
     mutations: {
-      // Avoid showing duplicate notifications
       onSettled: () => {
-        // The actual notifications are handled in the components
       }
     }
   }
 });
 
 const App = () => {
-  // Removed the initialized state as it was causing issues
-  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -54,7 +47,6 @@ const App = () => {
                 <Route path="/professionals/:id" element={<ProfessionalDetail />} />
                 <Route path="/auth" element={<Auth />} />
                 
-                {/* Protected Routes */}
                 <Route path="/appointments" element={
                   <ProtectedRoute>
                     <Appointments />
@@ -85,7 +77,6 @@ const App = () => {
               </Routes>
             </BrowserRouter>
             
-            {/* Always render both toasters but with fixed configuration */}
             <Toaster />
             <Sonner position="top-right" closeButton richColors />
           </UserProvider>

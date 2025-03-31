@@ -1,6 +1,6 @@
 
 // Re-export the hooks to prevent circular dependencies
-import { toast } from "@/components/ui/sonner";
+import { toast as sonnerToast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
 
-export { useToast, toast };
+export { useToast, sonnerToast as toast };

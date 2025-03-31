@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { 
   Dialog,
@@ -59,7 +58,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Reset selected service if serviceId prop changes
   useEffect(() => {
     if (serviceId) {
       setSelectedServiceId(serviceId);
@@ -84,7 +82,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Get the service price
       const { data: serviceData, error: serviceError } = await supabase
         .from('services')
         .select('price')
@@ -95,7 +92,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
       
       const servicePrice = serviceData?.price || 35000;
       
-      // Create the appointment in the database
       const { data, error } = await supabase
         .from('appointments')
         .insert([
@@ -121,7 +117,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
         description: `Your appointment with ${professionalName} has been scheduled`,
       });
       
-      // Reset form after success
       setTimeout(() => {
         setDate(undefined);
         setTimeSlot('');
@@ -309,7 +304,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Authentication Alert Dialog */}
       <AlertDialog open={showAuthAlert} onOpenChange={setShowAuthAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
