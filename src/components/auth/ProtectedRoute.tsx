@@ -35,11 +35,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   
   // Redirect to auth page if not authenticated
   if (!session || !user) {
-    console.log('Not authenticated, redirecting to /auth');
+    console.log('Demo auth: Not authenticated, redirecting to /auth');
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
   
   // Render children if authenticated
-  console.log('User authenticated, rendering protected content');
+  console.log('Demo auth: User authenticated, rendering protected content');
   return <>{children}</>;
 };

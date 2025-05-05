@@ -1,12 +1,8 @@
+
 import { useState, useEffect, createContext, useContext } from 'react';
-import { 
-  User, 
-  Session, 
-  AuthChangeEvent 
-} from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Demo user types
 interface UserProfile {
   id: string;
   full_name: string | null;
@@ -26,11 +22,39 @@ interface Subscription {
   expires_at: string | null;
 }
 
+// Demo user - normally this would come from Supabase
+const DEMO_USER = {
+  id: 'demo-user-123',
+  email: 'demo@example.com',
+  userMetadata: {
+    full_name: 'Demo User'
+  }
+};
+
+const DEMO_PROFILE: UserProfile = {
+  id: 'demo-user-123',
+  full_name: 'Demo User',
+  avatar_url: null,
+  phone: '+255 712 345 678',
+  location: 'Dar es Salaam, Tanzania',
+  bio: 'This is a demo user profile for testing purposes',
+  profession: 'Developer',
+  role: 'customer',
+  is_verified: true
+};
+
+const DEMO_SUBSCRIPTION: Subscription = {
+  id: 'demo-sub-123',
+  plan: 'free',
+  is_active: true,
+  expires_at: null
+};
+
 interface AuthContextType {
-  user: User | null;
+  user: typeof DEMO_USER | null;
   profile: UserProfile | null;
   subscription: Subscription | null;
-  session: Session | null;
+  session: { user: typeof DEMO_USER } | null;
   isLoading: boolean;
   isInitialized: boolean;
   signUp: (email: string, password: string, metadata?: { full_name?: string }) => Promise<{ error: any, isNewUser?: boolean }>;
@@ -42,219 +66,63 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Demo credentials
+const DEMO_CREDENTIALS = {
+  email: 'demo@example.com',
+  password: 'password123'
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<typeof DEMO_USER | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<{ user: typeof DEMO_USER } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    let mounted = true;
-    
-    // Set up auth state listener FIRST to avoid missing auth events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, currentSession: Session | null) => {
-        console.log('Auth state changed:', event);
-        
-        if (!mounted) return;
-        
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          // Use setTimeout to avoid potential deadlocks with Supabase auth
-          setTimeout(() => {
-            if (mounted) {
-              fetchUserProfile(currentSession.user.id);
-              fetchUserSubscription(currentSession.user.id);
-            }
-          }, 0);
-        } else {
-          setProfile(null);
-          setSubscription(null);
-        }
-      }
-    );
-    
-    // THEN check for existing session
-    const initializeAuth = async () => {
+    // Initialize with the demo user session from localStorage if available
+    const initAuth = async () => {
       try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        const storedSession = localStorage.getItem('demoSession');
         
-        if (error) {
-          console.error('Error getting session:', error);
-          throw error;
-        }
-        
-        if (!mounted) return;
-        
-        console.log('Initial session check:', currentSession ? 'Session found' : 'No session');
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          await fetchUserProfile(currentSession.user.id);
-          await fetchUserSubscription(currentSession.user.id);
+        if (storedSession) {
+          // User is already logged in
+          setUser(DEMO_USER);
+          setProfile(DEMO_PROFILE);
+          setSubscription(DEMO_SUBSCRIPTION);
+          setSession({ user: DEMO_USER });
+          console.log('Demo session restored from localStorage');
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
-        if (mounted) {
-          setIsLoading(false);
-          setIsInitialized(true);
-        }
+        // Always set these to true to indicate we've finished checking
+        setIsLoading(false);
+        setIsInitialized(true);
       }
     };
     
-    initializeAuth();
-    
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    initAuth();
   }, []);
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      console.log('Fetching user profile for:', userId);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching profile:', error);
-        throw error;
-      }
-      
-      if (data) {
-        console.log('Profile found:', data);
-        setProfile(data as UserProfile);
-      } else {
-        console.log('No profile found for user', userId);
-        // Create basic profile if none exists
-        const { error: createError } = await supabase
-          .from('profiles')
-          .insert([{ 
-            id: userId,
-            role: 'customer',
-            is_verified: false
-          }]);
-          
-        if (createError) {
-          console.error('Error creating profile:', createError);
-          throw createError;
-        }
-        
-        // Fetch the newly created profile
-        const { data: newProfile, error: fetchError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-        
-        if (fetchError) {
-          console.error('Error fetching new profile:', fetchError);
-          throw fetchError;
-        }
-          
-        console.log('New profile created:', newProfile);
-        setProfile(newProfile as UserProfile);
-      }
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-    }
-  };
-
-  const fetchUserSubscription = async (userId: string) => {
-    try {
-      console.log('Fetching subscription for user:', userId);
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (error && error.code !== 'PGRST116') { // Ignore "No rows returned" error
-        console.error('Error fetching subscription:', error);
-        throw error;
-      }
-      
-      if (!data) {
-        console.log('No subscription found, creating default free subscription');
-        // Create a default free subscription if none exists
-        const { data: newSub, error: createError } = await supabase
-          .from('subscriptions')
-          .insert([{ 
-            user_id: userId,
-            plan: 'free',
-            is_active: true
-          }])
-          .select()
-          .single();
-          
-        if (createError) {
-          console.error('Error creating subscription:', createError);
-          throw createError;
-        }
-        
-        console.log('New subscription created:', newSub);
-        setSubscription(newSub as Subscription);
-      } else {
-        console.log('Subscription found:', data);
-        setSubscription(data as Subscription);
-      }
-    } catch (error) {
-      console.error('Error in fetchUserSubscription:', error);
-      setSubscription(null);
-    }
-  };
 
   const signUp = async (email: string, password: string, metadata?: { full_name?: string }) => {
     try {
       setIsLoading(true);
-      console.log('Signing up user with email:', email);
+      console.log('Demo signup with:', { email, metadata });
       
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata,
-          emailRedirectTo: `${window.location.origin}/auth`
-        }
-      });
+      // In demo mode, we'll always succeed but with a delay to simulate network
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      if (error) {
-        console.error('Signup error:', error);
-        toast({
-          title: "Sign up failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
-      }
-      
-      console.log('Signup successful:', data);
       toast({
         title: "Account created successfully",
-        description: "Please check your email for verification.",
+        description: "Please sign in with your demo credentials",
       });
       
       return { error: null, isNewUser: true };
     } catch (error: any) {
-      console.error('Error in signUp function:', error);
-      toast({
-        title: "Sign up failed",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
+      console.error('Error in demo signUp:', error);
       return { error };
     } finally {
       setIsLoading(false);
@@ -269,32 +137,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: { message: "Email and password are required" } };
       }
       
-      console.log('Signing in user with email:', email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        console.error('Sign in error:', error);
+      // Check against demo credentials
+      if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
+        console.log('Demo sign-in successful');
+        
+        // Set up the demo session
+        localStorage.setItem('demoSession', 'true');
+        setUser(DEMO_USER);
+        setProfile(DEMO_PROFILE);
+        setSubscription(DEMO_SUBSCRIPTION);
+        setSession({ user: DEMO_USER });
+        
+        // Show success toast
+        toast({
+          title: "Signed in successfully",
+          description: "Welcome to the demo!",
+        });
+        
+        return { error: null };
+      } else {
+        console.log('Demo sign-in failed: invalid credentials');
         toast({
           title: "Sign in failed",
-          description: error.message,
+          description: "Invalid credentials. Try demo@example.com / password123",
           variant: "destructive",
         });
-        return { error };
+        return { error: { message: "Invalid login credentials" } };
       }
-      
-      console.log('Successfully signed in:', data?.user?.id);
-      
-      toast({
-        title: "Signed in successfully",
-        description: "Welcome back!",
-      });
-      
-      return { error: null };
     } catch (error: any) {
-      console.error('Error in signIn function:', error);
+      console.error('Error in demo signIn:', error);
       toast({
         title: "Sign in failed",
         description: error.message || "An unexpected error occurred",
@@ -309,22 +180,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setIsLoading(true);
-      console.log('Signing out user');
-      const { error } = await supabase.auth.signOut();
+      console.log('Demo sign-out');
       
-      if (error) {
-        console.error('Sign out error:', error);
-        throw error;
-      }
+      // Clear the demo session
+      localStorage.removeItem('demoSession');
+      setUser(null);
+      setProfile(null);
+      setSubscription(null);
+      setSession(null);
       
       toast({
         title: "Signed out successfully",
       });
     } catch (error: any) {
-      console.error('Error signing out:', error);
+      console.error('Error in demo signOut:', error);
       toast({
         title: "Error signing out",
-        description: error.message || "Please try again",
+        description: "Please try again",
         variant: "destructive",
       });
     } finally {
@@ -334,8 +206,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchUserProfile(user.id);
-      await fetchUserSubscription(user.id);
+      // In demo mode, we just return the existing profile
+      console.log('Refreshing demo profile');
     }
   };
 
@@ -343,15 +215,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!user) throw new Error('User not authenticated');
       
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
+      console.log('Demo profile update:', updates);
       
-      if (error) throw error;
-      
-      // After updating, refresh the profile data
-      await fetchUserProfile(user.id);
+      // Update the demo profile in memory
+      setProfile(prevProfile => ({
+        ...prevProfile!,
+        ...updates
+      }));
       
       // Show a success notification if requested
       if (showNotification) {
@@ -363,7 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       return { error: null };
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Error updating demo profile:', error);
       
       if (showNotification) {
         toast({

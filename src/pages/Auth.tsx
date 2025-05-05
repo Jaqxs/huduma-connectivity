@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -24,8 +25,20 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Demo credentials notice component
+const DemoCredentialsNotice = () => (
+  <Alert className="mb-4 bg-blue-50 text-blue-700 border-blue-200">
+    <Info className="h-4 w-4" />
+    <AlertTitle>Demo Credentials</AlertTitle>
+    <AlertDescription className="text-sm">
+      <strong>Email:</strong> demo@example.com<br />
+      <strong>Password:</strong> password123
+    </AlertDescription>
+  </Alert>
+);
 
 const authFormSchema = z.object({
   email: z.string()
@@ -78,6 +91,12 @@ const Auth: React.FC = () => {
     }
   }, [user, navigate, isInitialized, from]);
   
+  // Set demo credentials when clicking the demo credentials notice
+  const fillDemoCredentials = () => {
+    form.setValue('email', 'demo@example.com');
+    form.setValue('password', 'password123');
+  };
+  
   const onSubmit = async (data: AuthFormValues) => {
     setIsLoading(true);
     setFormError(null);
@@ -126,7 +145,7 @@ const Auth: React.FC = () => {
           console.error('Signin error details:', error);
           
           if (error.message?.includes('Invalid login credentials')) {
-            setFormError('Invalid email or password. Please try again.');
+            setFormError('Invalid email or password. Try the demo credentials above.');
           } else if (error.message?.includes('Email not confirmed')) {
             setFormError('Please verify your email address before signing in.');
           } else {
@@ -183,6 +202,9 @@ const Auth: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="px-6 pt-0">
+            {/* Add demo credentials notice */}
+            <DemoCredentialsNotice />
+            
             {formError && (
               <Alert variant="destructive" className="mb-4 animate-fade-in">
                 <AlertCircle className="h-4 w-4" />
@@ -280,6 +302,16 @@ const Auth: React.FC = () => {
                     </FormItem>
                   )}
                 />
+                
+                {/* Click demo credentials to auto-fill the form */}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={fillDemoCredentials}
+                >
+                  Use Demo Credentials
+                </Button>
                 
                 <GradientButton
                   type="submit"
